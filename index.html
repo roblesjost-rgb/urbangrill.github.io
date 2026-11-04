@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urban Grill - Sistema de Facturación y Reservas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar { background-color: #1e1e1e; border-bottom: 2px solid #ff6f00; z-index: 1000; }
+        
+        .security-banner {
+            background: linear-gradient(135deg, #2a1b0d, #1a1a1a);
+            border: 2px solid #ff6f00;
+            color: #ffb300;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(255, 111, 0, 0.4);
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(255, 111, 0, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 111, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 111, 0, 0); }
+        }
+
+        .hero-section {
+            background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.9)), 
+                              url('https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=80');
+            background-size: cover; background-position: center; height: 40vh;
+            display: flex; align-items: center; justify-content: center; text-align: center;
+            border-bottom: 4px solid #ff6f00;
+        }
+        .card { background-color: #1e1e1e; color: #fff; border: 1px solid #333; border-radius: 12px; overflow: hidden; }
+        .card-img-top { height: 200px; object-fit: cover; border-bottom: 3px solid #ff6f00; }
+        .btn-orange { background-color: #ff6f00; color: white; border: none; font-weight: bold; }
+        .btn-orange:hover { background-color: #e66000; color: white; }
+        .promo-banner { background: linear-gradient(45deg, #d32f2f, #ff6f00); color: white; border-radius: 8px; padding: 15px; position: relative; }
+        .badge-rating { background-color: #ffb300; color: #000; font-weight: bold; }
+        .text-orange { color: #ff6f00; }
+        
+        .wheel-container { position: relative; width: 260px; height: 260px; margin: 0 auto; }
+        #wheelCanvas { border-radius: 50%; border: 5px solid #ff6f00; transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99); }
+        .wheel-pointer {
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-top: 24px solid #ff6f00; z-index: 10;
+        }
+        .hidden-section { display: none; }
+        .invoice-box { background: #1a1a1a; border: 2px dashed #ff6f00; border-radius: 12px; padding: 25px; margin-top: 20px; box-shadow: 0 4px 15px rgba(255,111,0,0.2); }
+        .btn-instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: white; font-weight: bold; border: none; }
+        .btn-instagram:hover { opacity: 0.9; color: white; }
+        .proof-img { max-width: 100px; max-height: 100px; border-radius: 6px; cursor: pointer; border: 1px solid #ff6f00; }
+    </style>
+</head>
+<body>
+
+<!-- BARRA DE NAVEGACIÓN -->
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <div class="container">
+        <a class="navbar-brand text-warning fw-bold fs-3" href="#">🔥 Urban Grill</a>
+        <div class="d-flex align-items-center">
+            <a href="https://www.instagram.com/street_urbangrill?rpxt=MTRlbzFtM3l1aWR2Zg==" target="_blank" class="btn btn-instagram btn-sm me-2 d-none d-md-inline-block">
+                <i class="bi bi-instagram"></i> Instagram
+            </a>
+            <a href="#promos" class="btn btn-outline-warning me-2 btn-sm">Promos</a>
+            <a href="#ruletaSection" class="btn btn-outline-info me-2 btn-sm">🎰 Ruleta</a>
+            <a href="#reservar" class="btn btn-outline-light me-2 btn-sm">Reservar</a>
+            <button onclick="requestAccess('accounting')" class="btn btn-success me-2 btn-sm">📊 Contador</button>
+            <button onclick="requestAccess('admin')" class="btn btn-orange btn-sm">⚙️ Admin</button>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero-section mt-5">
+    <div class="container">
+        <h1 class="text-warning fw-bold display-4">Urban Grill</h1>
+        <p class="lead text-white">Chuzos a la parrilla premium: Pollo ($9k), Chorizo ($9.5k) y Mixto BBQ ($10k).</p>
+        <div class="mt-3">
+            <a href="#menu" class="btn btn-lg btn-orange px-4 me-2">Ver Menú</a>
+            <a href="https://www.instagram.com/street_urbangrill?rpxt=MTRlbzFtM3l1aWR2Zg==" target="_blank" class="btn btn-lg btn-instagram px-4">
+                <i class="bi bi-instagram"></i> Síguenos
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5">
+    <div id="alertBox"></div>
+
+    <!-- BANNER DE SEGURIDAD -->
+    <div class="alert security-banner p-4 mb-4 text-center shadow-lg" role="alert">
+        <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+            <i class="bi bi-shield-fill-exclamation fs-3 text-warning"></i>
+            <h4 class="alert-heading fw-bold m-0 text-warning">SISTEMA DE MONITOREO DE SEGURIDAD ACTIVO</h4>
+        </div>
+        <p class="mb-0 text-light">
+            Aviso para todos los usuarios: Las reservas, datos de contacto y comprobantes de transferencia están siendo <strong>verificados automáticamente en tiempo real</strong> por nuestro asistente de seguridad.
+        </p>
+    </div>
+
+    <!-- 1. SECCIÓN DE PROMOCIONES -->
+    <div id="promos" class="mb-5 pt-2">
+        <h2 class="text-warning mb-3">⚡ Promociones Flash en Tiempo Real</h2>
+        <div id="promosList" class="row">
+            <p class="text-muted">No hay promociones activas en este momento.</p>
+        </div>
+    </div>
+
+    <!-- 2. RULETA DE DESCUENTOS -->
+    <div id="ruletaSection" class="card p-4 mb-5 text-center shadow border-warning">
+        <h2 class="text-warning">🎰 Ruleta de Descuentos Urban Grill</h2>
+        <p class="text-light">¡Gira la ruleta y reclama tu premio en tu próxima reserva!</p>
+        
+        <div id="ruletaDisabledMsg" class="alert alert-secondary d-none">
+            La ruleta no está activa o ya utilizaste tu intento.
+        </div>
+
+        <div id="ruletaBox">
+            <div class="wheel-container my-3">
+                <div class="wheel-pointer"></div>
+                <canvas id="wheelCanvas" width="260" height="260"></canvas>
+            </div>
+            
+            <div class="col-md-6 mx-auto mb-3">
+                <input type="text" id="ruletaClientName" class="form-control bg-dark text-white border-secondary text-center" placeholder="Tu Nombre antes de girar" required>
+            </div>
+            <button onclick="spinWheel()" id="spinBtn" class="btn btn-lg btn-warning fw-bold px-5">¡GIRAR RULETA!</button>
+        </div>
+        <h3 id="ruletaResult" class="text-success mt-3 fw-bold"></h3>
+    </div>
+
+    <!-- 3. MENÚ DE PRODUCTOS -->
+    <div id="menu" class="pt-4">
+        <h2 class="text-warning mb-3">🍢 Nuestro Menú de Chuzos</h2>
+        <div class="row mb-5" id="menuList"></div>
+    </div>
+
+    <!-- 4. FORMULARIO DE RESERVA CLIENTE -->
+    <div id="reservar" class="card p-4 mb-5 shadow pt-4">
+        <h3 class="text-warning mb-3">📅 Haz tu Reserva de Chuzos</h3>
+        <form id="reserveForm" onsubmit="handleReserve(event)">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold text-orange">Nombre Completo</label>
+                    <input type="text" id="resName" class="form-control bg-dark text-white border-secondary" placeholder="Ej: Juan Pérez" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold text-orange">Teléfono / WhatsApp</label>
+                    <input type="text" id="resPhone" class="form-control bg-dark text-white border-secondary" placeholder="Ej: 300 123 4567" required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label fw-bold text-orange">Selecciona tu Chuzo</label>
+                    <select id="resProduct" class="form-select bg-dark text-white border-secondary" required></select>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label class="form-label fw-bold text-orange">Cantidad</label>
+                    <input type="number" id="resQty" min="1" value="1" class="form-control bg-dark text-white border-secondary" required>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label fw-bold text-orange">Método de Pago</label>
+                    <select id="resPaymentMethod" class="form-select bg-dark text-white border-secondary" onchange="toggleProofInput()" required>
+                        <option value="Efectivo">💵 Efectivo (En el local)</option>
+                        <option value="Transferencia">📱 Transferencia (Nequi/Daviplata/Bancolombia)</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label class="form-label fw-bold text-orange">Hora de reclamo</label>
+                    <input type="time" id="resTime" class="form-control bg-dark text-white border-secondary" required>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label class="form-label fw-bold text-orange">Premio / Descuento</label>
+                    <input type="text" id="resDiscount" class="form-control bg-dark text-warning border-secondary" placeholder="Premio Ruleta" readonly>
+                </div>
+            </div>
+
+            <div id="transferProofBox" class="mb-3 d-none">
+                <div class="card p-3 bg-dark border-info">
+                    <label class="form-label fw-bold text-info"><i class="bi bi-file-earmark-image"></i> Subir Captura de Pantalla de la Transferencia</label>
+                    <input type="file" id="resProofFile" class="form-control bg-dark text-white border-info" accept="image/*">
+                    <small class="text-muted mt-1">Adjunta la imagen del comprobante de Nequi, Daviplata o Bancolombia para validar tu pago.</small>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-orange w-100 py-3 mt-2 fs-5">Confirmar Reserva y Generar Factura</button>
+        </form>
+
+        <!-- FACTURA GENERADA -->
+        <div id="invoiceContainer" class="invoice-box d-none">
+            <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-3">
+                <div>
+                    <h3 class="text-warning m-0">🔥 Urban Grill</h3>
+                    <small class="text-muted">Comprobante de Reserva Oficial</small>
+                </div>
+                <div class="text-end">
+                    <h5 class="text-info m-0" id="invRef">Ref: UG-2026-0000</h5>
+                    <small class="text-muted" id="invDate">Fecha: 00/00/0000</small>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <p class="mb-1"><strong>Cliente:</strong> <span id="invClient"></span></p>
+                    <p class="mb-1"><strong>Teléfono:</strong> <span id="invPhone"></span></p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-1"><strong>Hora de Reclamo:</strong> <span id="invTime"></span></p>
+                    <p class="mb-1"><strong>Método de Pago:</strong> <span id="invPayment" class="badge bg-success"></span></p>
+                    <p class="mb-1"><strong>Descuento Aplicado:</strong> <span id="invDisc" class="text-warning"></span></p>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-dark table-sm align-middle">
+                    <thead>
+                        <tr><th>Producto</th><th>Cantidad</th><th>Precio Unit.</th><th class="text-end">Total</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td id="invProdName"></td>
+                            <td id="invProdQty"></td>
+                            <td id="invProdPrice"></td>
+                            <td class="text-end text-success fw-bold" id="invProdTotal"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-end mt-3">
+                <h4 class="text-warning">Total a Pagar: <span id="invGrandTotal" class="text-success"></span></h4>
+            </div>
+            <div class="alert alert-warning mt-3 mb-0 text-center py-2" role="alert">
+                ⚠️ Guardar captura del número de referencia: <strong><span id="invRefCopy"></span></strong>.
+            </div>
+        </div>
+    </div>
+
+    <!-- MÓDULO CONTABLE -->
+    <div id="accountingPanel" class="hidden-section mb-5 pt-4">
+        <hr class="border-success my-4">
+        <div class="card p-4 shadow border-success">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="text-success m-0">📊 Módulo Contable - Urban Grill</h1>
+                <button onclick="closeSection('accountingPanel')" class="btn btn-outline-secondary btn-sm">Cerrar Panel</button>
+            </div>
+
+            <div class="row text-center mb-4">
+                <div class="col-md-4 mb-2">
+                    <div class="card bg-dark p-3 border-success">
+                        <h5 class="text-muted">Total Ingresos Generados</h5>
+                        <h2 class="text-success fw-bold" id="accTotalSales">$0 COP</h2>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <div class="card bg-dark p-3 border-warning">
+                        <h5 class="text-muted">Total Unidades Vendidas</h5>
+                        <h2 class="text-warning fw-bold" id="accTotalUnits">0 Unidades</h2>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <div class="card bg-dark p-3 border-info">
+                        <h5 class="text-muted">Total Transacciones</h5>
+                        <h2 class="text-info fw-bold" id="accTotalOrders">0 Registros</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-dark p-3 mb-4 border-secondary">
+                <h4 class="text-success mb-3">➕ Registrar Venta Manual (Mostrador / Sin Reserva)</h4>
+                <form onsubmit="handleManualSale(event)">
+                    <div class="row">
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label text-light">Cliente / Referencia</label>
+                            <input type="text" id="manualClient" class="form-control bg-dark text-white border-secondary" placeholder="Ej: Juan (Mostrador)" required>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="form-label text-light">Producto</label>
+                            <select id="manualProduct" class="form-select bg-dark text-white border-secondary" required></select>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="form-label text-light">Método Pago</label>
+                            <select id="manualPayment" class="form-select bg-dark text-white border-secondary" required>
+                                <option value="Efectivo">💵 Efectivo</option>
+                                <option value="Transferencia">📱 Transferencia</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label text-light">Cantidad</label>
+                            <input type="number" id="manualQty" min="1" value="1" class="form-control bg-dark text-white border-secondary" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 mt-2">Registrar Venta Manual</button>
+                </form>
+            </div>
+
+            <h4 class="text-light mb-3">Detalle Completo de Ingresos y Verificación de Pagos</h4>
+            <div class="table-responsive">
+                <table class="table table-dark table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nº Referencia</th>
+                            <th>Cliente</th>
+                            <th>Método Pago</th>
+                            <th>Comprobante</th>
+                            <th>Producto</th>
+                            <th>Cant.</th>
+                            <th>Total Bruto</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountingTable">
+                        <tr><td colspan="9" class="text-muted text-center py-3">No hay registros contables.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL DE ADMINISTRACIÓN -->
+    <div id="adminPanel" class="hidden-section mb-5 pt-4">
+        <hr class="border-warning my-4">
+        <div class="card p-4 shadow border-warning">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="text-warning m-0">⚙️ Panel de Administración</h1>
+                <button onclick="closeSection('adminPanel')" class="btn btn-outline-secondary btn-sm">Cerrar Panel</button>
+            </div>
+
+            <!-- ASISTENTE DE SEGURIDAD -->
+            <div class="card bg-dark p-3 mb-4 border-danger shadow">
+                <h3 class="text-danger mb-2"><i class="bi bi-shield-lock-fill"></i> Asistente de Seguridad y Verificación</h3>
+                <div id="securityAlertsContainer">
+                    <p class="text-muted text-center py-2 mb-0">🤖 Asistente en monitoreo: No se han detectado anomalías hasta el momento.</p>
+                </div>
+            </div>
+
+            <!-- PUBLICAR PROMOCIÓN CON TIEMPO DE VIGENCIA Y BOTÓN DE BORRAR -->
+            <div class="card bg-dark p-3 mb-4 border-secondary">
+                <h3 class="text-warning">📢 Publicar Promoción Flash (Con Expiración Automática)</h3>
+                <form onsubmit="handlePromo(event)">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label text-orange">Título de la Oferta</label>
+                            <input type="text" id="promoTitle" class="form-control bg-dark text-white border-secondary" placeholder="Ej: Combo 2x1 en Chuzo de Pollo" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-orange">Duración en minutos (Opcional)</label>
+                            <input type="number" id="promoMinutes" min="1" class="form-control bg-dark text-white border-secondary" placeholder="Ej: 30 (Dejar vacío = Sin límite)">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-orange">Descripción</label>
+                        <textarea id="promoDesc" class="form-control bg-dark text-white border-secondary" rows="2" placeholder="Detalles de la promoción..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-warning fw-bold">Publicar Promoción</button>
+                </form>
+
+                <h5 class="text-warning mt-4">Gestión de Promociones Activas</h5>
+                <div id="adminPromosList" class="mt-2"></div>
+            </div>
+
+            <!-- TABLA DE ENCUESTAS -->
+            <div class="card bg-dark p-3 mb-4 border-warning shadow">
+                <h3 class="text-warning mb-2">📊 Encuesta de Calificación por Producto</h3>
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Votos Recibidos</th>
+                                <th>Promedio Calificación</th>
+                                <th>Estado de Aceptación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="surveyReportTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Gestión de Ruleta -->
+            <div class="card bg-dark p-3 mb-4 border-info">
+                <h3 class="text-info">🎰 Gestión de la Ruleta de Descuentos</h3>
+                <div class="d-flex align-items-center gap-3 mt-3">
+                    <button onclick="toggleWheelStatus()" id="toggleWheelBtn" class="btn btn-info fw-bold">Habilitar/Deshabilitar Ruleta</button>
+                    <button onclick="resetWheelForUsers()" class="btn btn-outline-warning">Restablecer Ruleta para Usuarios</button>
+                </div>
+                <p id="adminWheelStatus" class="mt-2 text-light fw-bold"></p>
+
+                <h5 class="text-warning mt-3">🏆 Ganadores de la Ruleta</h5>
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped align-middle">
+                        <thead><tr><th>#</th><th>Cliente</th><th>Premio</th><th>Hora</th></tr></thead>
+                        <tbody id="wheelWinnersTable">
+                            <tr><td colspan="4" class="text-muted text-center">Sin ganadores.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Lista de Reservas -->
+            <div class="card bg-dark p-3 border-secondary">
+                <h3 class="text-warning mb-3">📋 Control de Pedidos y Validación de Comprobantes</h3>
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nº Referencia</th>
+                                <th>Cliente</th>
+                                <th>Método Pago</th>
+                                <th>Comprobante</th>
+                                <th>Teléfono</th>
+                                <th>Producto</th>
+                                <th>Cant.</th>
+                                <th>Hora</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reservationsTable">
+                            <tr><td colspan="10" class="text-muted text-center py-3">No hay reservas.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="text-center py-4 border-top border-secondary mt-5 text-muted">
+    <p class="mb-2">🔥 **Urban Grill** - Emprendimiento Escolar</p>
+    <a href="https://www.instagram.com/street_urbangrill?rpxt=MTRlbzFtM3l1aWR2Zg==" target="_blank" class="btn btn-instagram btn-sm px-4">
+        <i class="bi bi-instagram"></i> Síguenos en Instagram (@street_urbangrill)
+    </a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    let products = JSON.parse(localStorage.getItem('ug_products')) || [
+        { id: 1, name: 'Chuzo de Pollo', desc: 'Tiernos trozos de pechuga de pollo marinada a la parrilla con arepa y queso.', price: 9000, ratings: [5, 5, 4], img: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=80' },
+        { id: 2, name: 'Chuzo de Chorizo', desc: 'Chorizo premium artesanal asado al carbón acompañado de arepa con queso.', price: 9500, ratings: [5, 4], img: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80' },
+        { id: 3, name: 'Chuzo Pollo con Chorizo BBQ', desc: 'Combinación explosiva de pechuga y chorizo marinados en salsa BBQ de la casa.', price: 10000, ratings: [5, 5, 5], img: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80' }
+    ];
+
+    let promotions = JSON.parse(localStorage.getItem('ug_promos')) || [];
+    let reservations = JSON.parse(localStorage.getItem('ug_res')) || [];
+    let accountingRecords = JSON.parse(localStorage.getItem('ug_acc')) || [];
+    let wheelWinners = JSON.parse(localStorage.getItem('ug_wheel_winners')) || [];
+    let wheelEnabled = localStorage.getItem('ug_wheel_enabled') !== 'false';
+    let userHasSpun = localStorage.getItem('ug_user_spun') === 'true';
+
+    const prizes = ["10% OFF", "Gaseosa Gratis", "Sin Premio", "15% OFF", "Arepa Extra", "5% OFF"];
+    const colors = ["#ff6f00", "#d32f2f", "#333333", "#ffb300", "#388e3c", "#0288d1"];
+
+    const PASS_ADMIN = "admin2026";
+    const PASS_ACC = "contador2026";
+
+    function saveData() {
+        localStorage.setItem('ug_products', JSON.stringify(products));
+        localStorage.setItem('ug_promos', JSON.stringify(promotions));
+        localStorage.setItem('ug_res', JSON.stringify(reservations));
+        localStorage.setItem('ug_acc', JSON.stringify(accountingRecords));
+        localStorage.setItem('ug_wheel_winners', JSON.stringify(wheelWinners));
+        localStorage.setItem('ug_wheel_enabled', wheelEnabled);
+        localStorage.setItem('ug_user_spun', userHasSpun);
+    }
+
+    function showAlert(msg) {
+        const box = document.getElementById('alertBox');
+        box.innerHTML = `<div class="alert alert-success alert-dismissible fade show shadow mb-4" role="alert">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+        setTimeout(() => box.innerHTML = '', 3500);
+    }
+
+    function toggleProofInput() {
+        let method = document.getElementById('resPaymentMethod').value;
+        let box = document.getElementById('transferProofBox');
+        if (method === 'Transferencia') {
+            box.classList.remove('d-none');
+        } else {
+            box.classList.add('d-none');
+        }
+    }
+
+    function requestAccess(type) {
+        let pass = prompt(`Ingrese la contraseña para acceder al módulo de ${type === 'admin' ? 'Administración' : 'Contabilidad'}:`);
+        if (type === 'admin' && pass === PASS_ADMIN) {
+            toggleSection('adminPanel');
+        } else if (type === 'accounting' && pass === PASS_ACC) {
+            toggleSection('accountingPanel');
+        } else if (pass !== null) {
+            alert("Contraseña incorrecta.");
+        }
+    }
+
+    function toggleSection(id) {
+        let panel = document.getElementById(id);
+        if (panel.classList.contains('hidden-section')) {
+            panel.classList.remove('hidden-section');
+            panel.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            panel.classList.add('hidden-section');
+        }
+    }
+
+    function closeSection(id) {
+        document.getElementById(id).classList.add('hidden-section');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function drawWheel() {
+        const canvas = document.getElementById('wheelCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const numSlices = prizes.length;
+        const sliceAngle = (2 * Math.PI) / numSlices;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (let i = 0; i < numSlices; i++) {
+            ctx.beginPath();
+            ctx.fillStyle = colors[i];
+            ctx.moveTo(130, 130);
+            ctx.arc(130, 130, 125, i * sliceAngle, (i + 1) * sliceAngle);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.save();
+            ctx.translate(130, 130);
+            ctx.rotate(i * sliceAngle + sliceAngle / 2);
+            ctx.textAlign = "right";
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 12px Arial";
+            ctx.fillText(prizes[i], 110, 4);
+            ctx.restore();
+        }
+    }
+
+    function spinWheel() {
+        const nameInput = document.getElementById('ruletaClientName').value.trim();
+        if (!nameInput) { alert("Escribe tu nombre antes de girar."); return; }
+        if (!wheelEnabled) { alert("La ruleta está deshabilitada."); return; }
+        if (userHasSpun) { alert("Ya utilizaste tu intento."); return; }
+
+        document.getElementById('spinBtn').disabled = true;
+        const canvas = document.getElementById('wheelCanvas');
+        const selectedIndex = Math.floor(Math.random() * prizes.length);
+        const sliceAngle = 360 / prizes.length;
+        const degrees = 360 * 5 + (360 - (selectedIndex * sliceAngle + sliceAngle / 2));
+        canvas.style.transform = `rotate(${degrees}deg)`;
+
+        setTimeout(() => {
+            const wonPrize = prizes[selectedIndex];
+            document.getElementById('ruletaResult').innerText = `¡Felicidades ${nameInput}! Ganaste: ${wonPrize}`;
+            document.getElementById('resDiscount').value = `${nameInput} (${wonPrize})`;
+            
+            let time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            wheelWinners.unshift({ name: nameInput, prize: wonPrize, time: time });
+            userHasSpun = true;
+            saveData();
+            render();
+            showAlert(`Premio guardado. Haz tu reserva para aplicarlo.`);
+        }, 4000);
+    }
+
+    function handleReserve(e) {
+        e.preventDefault();
+        let name = document.getElementById('resName').value;
+        let phone = document.getElementById('resPhone').value;
+        let product = document.getElementById('resProduct').value;
+        let qty = parseInt(document.getElementById('resQty').value);
+        let paymentMethod = document.getElementById('resPaymentMethod').value;
+        let time = document.getElementById('resTime').value;
+        let discount = document.getElementById('resDiscount').value || 'Ninguno';
+        let fileInput = document.getElementById('resProofFile');
+
+        let prodObj = products.find(p => p.name === product);
+        let unitPrice = prodObj ? prodObj.price : 0;
+        let total = unitPrice * qty;
+
+        let referenceCode = 'UG-2026-' + Math.floor(1000 + Math.random() * 9000);
+        let currentDate = new Date().toLocaleDateString();
+
+        const processRecord = (imgData) => {
+            let newRecord = {
+                id: Date.now(),
+                ref: referenceCode,
+                type: 'Reserva Online',
+                client: name,
+                phone: phone,
+                product: product,
+                qty: qty,
+                paymentMethod: paymentMethod,
+                proofImg: imgData,
+                time: time,
+                unitPrice: unitPrice,
+                total: total,
+                discount: discount,
+                date: currentDate
+            };
+
+            reservations.push(newRecord);
+            accountingRecords.push(newRecord);
+            saveData();
+            render();
+
+            document.getElementById('invRef').innerText = `Ref: ${referenceCode}`;
+            document.getElementById('invRefCopy').innerText = referenceCode;
+            document.getElementById('invDate').innerText = `Fecha: ${currentDate}`;
+            document.getElementById('invClient').innerText = name;
+            document.getElementById('invPhone').innerText = phone;
+            document.getElementById('invPayment').innerText = paymentMethod;
+            document.getElementById('invTime').innerText = time;
+            document.getElementById('invDisc').innerText = discount;
+            document.getElementById('invProdName').innerText = product;
+            document.getElementById('invProdQty').innerText = qty;
+            document.getElementById('invProdPrice').innerText = `$${unitPrice.toLocaleString()} COP`;
+            document.getElementById('invProdTotal').innerText = `$${total.toLocaleString()} COP`;
+            document.getElementById('invGrandTotal').innerText = `$${total.toLocaleString()} COP`;
+            
+            document.getElementById('invoiceContainer').classList.remove('d-none');
+            document.getElementById('invoiceContainer').scrollIntoView({ behavior: 'smooth' });
+
+            document.getElementById('reserveForm').reset();
+            document.getElementById('transferProofBox').classList.add('d-none');
+            showAlert(`¡Reserva confirmada! Factura generada con referencia ${referenceCode}`);
+        };
+
+        if (paymentMethod === 'Transferencia' && fileInput.files && fileInput.files[0]) {
+            let reader = new FileReader();
+            reader.onload = function(evt) {
+                processRecord(evt.target.result);
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        } else {
+            processRecord('');
+        }
+    }
+
+    function handleManualSale(e) {
+        e.preventDefault();
+        let client = document.getElementById('manualClient').value;
+        let product = document.getElementById('manualProduct').value;
+        let paymentMethod = document.getElementById('manualPayment').value;
+        let qty = parseInt(document.getElementById('manualQty').value);
+
+        let prodObj = products.find(p => p.name === product);
+        let unitPrice = prodObj ? prodObj.price : 0;
+        let total = unitPrice * qty;
+        let time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        let referenceCode = 'UGM-2026-' + Math.floor(1000 + Math.random() * 9000);
+
+        let newRecord = {
+            id: Date.now(),
+            ref: referenceCode,
+            type: 'Venta Mostrador',
+            client: client,
+            phone: 'N/A',
+            product: product,
+            qty: qty,
+            paymentMethod: paymentMethod,
+            proofImg: '',
+            time: time,
+            unitPrice: unitPrice,
+            total: total,
+            discount: 'Manual'
+        };
+
+        accountingRecords.push(newRecord);
+        saveData();
+        render();
+
+        document.getElementById('manualClient').value = '';
+        showAlert(`¡Venta manual registrada! Referencia generada: ${referenceCode}`);
+    }
+
+    // MANEJO DE PROMOCIONES Y EXPIRACIÓN
+    function handlePromo(e) {
+        e.preventDefault();
+        let title = document.getElementById('promoTitle').value;
+        let desc = document.getElementById('promoDesc').value;
+        let mins = parseInt(document.getElementById('promoMinutes').value) || null;
+        let now = Date.now();
+        let expireTime = mins ? now + (mins * 60 * 1000) : null;
+        let timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        promotions.unshift({
+            id: now,
+            title: title,
+            desc: desc,
+            time: timeStr,
+            expireTime: expireTime
+        });
+
+        saveData();
+        render();
+        document.getElementById('promoTitle').value = '';
+        document.getElementById('promoDesc').value = '';
+        document.getElementById('promoMinutes').value = '';
+        showAlert("¡Promoción publicada con éxito!");
+    }
+
+    function deletePromo(id) {
+        promotions = promotions.filter(p => p.id !== id);
+        saveData();
+        render();
+        showAlert("Promoción eliminada.");
+    }
+
+    function cleanExpiredPromos() {
+        let now = Date.now();
+        let initialLen = promotions.length;
+        promotions = promotions.filter(p => !p.expireTime || p.expireTime > now);
+        if (promotions.length !== initialLen) {
+            saveData();
+            render();
+        }
+    }
+
+    function deleteRecord(id) {
+        accountingRecords = accountingRecords.filter(r => r.id !== id);
+        reservations = reservations.filter(r => r.id !== id);
+        saveData();
+        render();
+        showAlert("Registro eliminado.");
+    }
+
+    function checkSecurityAlerts() {
+        let alerts = [];
+        reservations.forEach(r => {
+            if (r.paymentMethod === 'Transferencia' && !r.proofImg) {
+                alerts.push(`⚠️ <strong>[Ref: ${r.ref}]</strong> El cliente <strong>${r.client}</strong> seleccionó Transferencia pero no adjuntó imagen del comprobante.`);
+            }
+            let cleanPhone = r.phone.replace(/\D/g, '');
+            if (cleanPhone.length < 10) {
+                alerts.push(`⚠️ <strong>[Ref: ${r.ref}]</strong> El número de teléfono de <strong>${r.client}</strong> (${r.phone}) parece incompleto o inválido.`);
+            }
+            if (r.qty > 15) {
+                alerts.push(`🚨 <strong>[Ref: ${r.ref}]</strong> Pedido inusualmente alto (${r.qty} unidades) realizado por <strong>${r.client}</strong>.`);
+            }
+            if (r.time) {
+                let hour = parseInt(r.time.split(':')[0]);
+                if (hour < 11 || hour > 23) {
+                    alerts.push(`⚠️ <strong>[Ref: ${r.ref}]</strong> La hora de reclamo (${r.time}) solicitada por <strong>${r.client}</strong> está fuera del horario habitual.`);
+                }
+            }
+        });
+
+        let alertsContainer = document.getElementById('securityAlertsContainer');
+        if (alerts.length === 0) {
+            alertsContainer.innerHTML = `<p class="text-muted text-center py-2 mb-0">🤖 Asistente en monitoreo: No se han detectado anomalías hasta el momento.</p>`;
+        } else {
+            alertsContainer.innerHTML = alerts.map(a => `<div class="alert alert-danger py-2 mb-2" role="alert">${a}</div>`).join('');
+        }
+    }
+
+    function render() {
+        cleanExpiredPromos();
+
+        let menuHTML = '';
+        let selectHTML = '';
+        products.forEach(p => {
+            let avg = p.ratings.length ? (p.ratings.reduce((a,b)=>a+b,0)/p.ratings.length).toFixed(1) : 0;
+            menuHTML += `
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow">
+                        <img src="${p.img}" class="card-img-top" alt="${p.name}">
+                        <div class="card-body d-flex flex-column p-4">
+                            <h5 class="card-title text-warning fw-bold fs-4">${p.name}</h5>
+                            <p class="card-text flex-grow-1 text-light">${p.desc}</p>
+                            <p class="fs-3 fw-bold text-white mb-2">$${p.price.toLocaleString()} COP</p>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span>Calificación:</span>
+                                <span class="badge badge-rating fs-6">⭐ ${avg} / 5</span>
+                                <small class="text-muted">(${p.ratings.length} votos)</small>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mt-auto pt-2 border-top border-secondary">
+                                <select id="rate-${p.id}" class="form-select form-select-sm bg-dark text-white border-secondary">
+                                    <option value="5">5 ⭐</option><option value="4">4 ⭐</option><option value="3">3 ⭐</option><option value="2">2 ⭐</option><option value="1">1 ⭐</option>
+                                </select>
+                                <button onclick="rateProduct(${p.id})" class="btn btn-sm btn-outline-warning">Votar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            selectHTML += `<option value="${p.name}">${p.name} - $${p.price.toLocaleString()} COP</option>`;
+        });
+        document.getElementById('menuList').innerHTML = menuHTML;
+        document.getElementById('resProduct').innerHTML = selectHTML;
+        document.getElementById('manualProduct').innerHTML = selectHTML;
+
+        // Render Promociones Públicas
+        let promosHTML = promotions.length === 0 ? `<div class="col-12"><p class="text-muted text-center py-3 card bg-dark">No hay promociones activas.</p></div>` :
+            promotions.map(pr => {
+                let expBadge = pr.expireTime ? `<small class="badge bg-warning text-dark ms-2">Vence pronto</small>` : '';
+                return `
+                <div class="col-md-6 mb-3">
+                    <div class="promo-banner shadow">
+                        <h4>${pr.title} ${expBadge}</h4>
+                        <p class="mb-1">${pr.desc}</p>
+                        <small class="text-light">Publicado: ${pr.time}</small>
+                    </div>
+                </div>`;
+            }).join('');
+        document.getElementById('promosList').innerHTML = promosHTML;
+
+        // Render Promociones Admin
+        let adminPromosHTML = promotions.length === 0 ? `<p class="text-muted">Sin promociones activas.</p>` :
+            promotions.map(pr => `
+                <div class="d-flex justify-content-between align-items-center bg-dark p-2 mb-2 rounded border border-secondary">
+                    <div>
+                        <strong class="text-warning">${pr.title}</strong>
+                        <small class="text-muted d-block">${pr.desc} (${pr.time})</small>
+                    </div>
+                    <button onclick="deletePromo(${pr.id})" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i> Eliminar</button>
+                </div>`).join('');
+        document.getElementById('adminPromosList').innerHTML = adminPromosHTML;
+
+        let totalSales = accountingRecords.reduce((sum, r) => sum + r.total, 0);
+        let totalUnits = accountingRecords.reduce((sum, r) => sum + r.qty, 0);
+        document.getElementById('accTotalSales').innerText = `$${totalSales.toLocaleString()} COP`;
+        document.getElementById('accTotalUnits').innerText = `${totalUnits} Unidades`;
+        document.getElementById('accTotalOrders').innerText = `${accountingRecords.length} Registros`;
+
+        let accTableHTML = accountingRecords.length === 0 ? `<tr><td colspan="9" class="text-muted text-center py-3">No hay registros contables.</td></tr>` :
+            accountingRecords.map((r, i) => {
+                let imgBtn = r.proofImg ? `<a href="${r.proofImg}" target="_blank"><img src="${r.proofImg}" class="proof-img" alt="Comprobante"></a>` : '<span class="text-muted">Sin Adjunto</span>';
+                return `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td class="text-info fw-bold">${r.ref}</td>
+                    <td>${r.client}</td>
+                    <td><span class="badge ${r.paymentMethod === 'Transferencia' ? 'bg-info text-dark' : 'bg-success'}">${r.paymentMethod || 'Efectivo'}</span></td>
+                    <td>${imgBtn}</td>
+                    <td class="text-warning">${r.product}</td>
+                    <td>${r.qty}</td>
+                    <td class="text-success fw-bold">$${r.total.toLocaleString()} COP</td>
+                    <td><button onclick="deleteRecord(${r.id})" class="btn btn-sm btn-outline-danger">Eliminar</button></td>
+                </tr>`;
+            }).join('');
+        document.getElementById('accountingTable').innerHTML = accTableHTML;
+
+        let surveyHTML = products.map(p => {
+            let totalVotes = p.ratings.length;
+            let avg = totalVotes ? (p.ratings.reduce((a,b)=>a+b,0)/totalVotes).toFixed(1) : 0;
+            let statusBadge = avg >= 4.5 ? '<span class="badge bg-success">🔥 Excelente</span>' : (avg >= 3.5 ? '<span class="badge bg-warning text-dark">👍 Bueno</span>' : '<span class="badge bg-danger">⚠️ Revisar</span>');
+            return `
+                <tr>
+                    <td class="fw-bold text-warning">${p.name}</td>
+                    <td><span class="badge bg-info text-dark">${totalVotes} votos</span></td>
+                    <td class="fw-bold fs-5">⭐ ${avg} / 5</td>
+                    <td>${statusBadge}</td>
+                </tr>`;
+        }).join('');
+        document.getElementById('surveyReportTable').innerHTML = surveyHTML;
+
+        let resTableHTML = reservations.length === 0 ? `<tr><td colspan="10" class="text-muted text-center py-3">No hay reservas.</td></tr>` :
+            reservations.map((r, i) => {
+                let imgBtn = r.proofImg ? `<a href="${r.proofImg}" target="_blank"><img src="${r.proofImg}" class="proof-img" alt="Comprobante"></a>` : '<span class="text-muted">Sin Adjunto</span>';
+                return `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td class="text-info fw-bold">${r.ref}</td>
+                    <td>${r.client}</td>
+                    <td><span class="badge ${r.paymentMethod === 'Transferencia' ? 'bg-info text-dark' : 'bg-success'}">${r.paymentMethod}</span></td>
+                    <td>${imgBtn}</td>
+                    <td><a href="https://wa.me/57${r.phone.replace(/\s+/g,'')}" target="_blank" class="text-info text-decoration-none">📞 ${r.phone}</a></td>
+                    <td class="text-warning">${r.product}</td>
+                    <td><span class="badge bg-warning text-dark">${r.qty}</span></td>
+                    <td>${r.time}</td>
+                    <td><button onclick="deleteRecord(${r.id})" class="btn btn-sm btn-outline-danger">Borrar</button></td>
+                </tr>`;
+            }).join('');
+        document.getElementById('reservationsTable').innerHTML = resTableHTML;
+
+        document.getElementById('adminWheelStatus').innerText = `Estado ruleta: ${wheelEnabled ? 'HABILITADA' : 'DESHABILITADA'}`;
+        let wheelHTML = wheelWinners.length === 0 ? `<tr><td colspan="4" class="text-muted text-center">Sin ganadores.</td></tr>` :
+            wheelWinners.map((w, i) => `<tr><td>${i + 1}</td><td>${w.name}</td><td class="text-warning fw-bold">${w.prize}</td><td>${w.time}</td></tr>`).join('');
+        document.getElementById('wheelWinnersTable').innerHTML = wheelHTML;
+
+        if (!wheelEnabled || userHasSpun) {
+            document.getElementById('ruletaBox').classList.add('d-none');
+            document.getElementById('ruletaDisabledMsg').classList.remove('d-none');
+        } else {
+            document.getElementById('ruletaBox').classList.remove('d-none');
+            document.getElementById('ruletaDisabledMsg').classList.add('d-none');
+        }
+
+        checkSecurityAlerts();
+    }
+
+    function rateProduct(id) {
+        let val = parseInt(document.getElementById(`rate-${id}`).value);
+        let prod = products.find(p => p.id === id);
+        prod.ratings.push(val);
+        saveData();
+        render();
+        showAlert(`¡Gracias por calificar "${prod.name}" con ${val} estrellas!`);
+    }
+
+    function toggleWheelStatus() {
+        wheelEnabled = !wheelEnabled;
+        saveData();
+        render();
+        showAlert(`Ruleta ${wheelEnabled ? 'habilitada' : 'deshabilitada'}.`);
+    }
+
+    function resetWheelForUsers() {
+        userHasSpun = false;
+        saveData();
+        render();
+        showAlert("Ruleta restablecida para nuevos usuarios.");
+    }
+
+    // Revisar promociones expiradas cada 30 segundos
+    setInterval(cleanExpiredPromos, 30000);
+
+    drawWheel();
+    render();
+</script>
+</body>
+</html>
