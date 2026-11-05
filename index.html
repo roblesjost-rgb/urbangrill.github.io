@@ -78,7 +78,7 @@
         </div>
     </div>
 
-    <!-- RESERVA CON SEGURIDAD -->
+    <!-- RESERVA CON SEGURIDAD Y APLICACIÓN DE CUPÓN -->
     <div id="reservar" class="card p-4 mb-5 shadow">
         <h3 class="text-warning mb-3">📅 Haz tu Reserva en la Nube (Segura)</h3>
         <form id="reserveForm" onsubmit="handleReserve(event)">
@@ -95,11 +95,11 @@
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <label class="form-label text-warning">Selecciona tu Chuzo</label>
-                    <select id="resProduct" class="form-select bg-dark text-white border-secondary" required></select>
+                    <select id="resProduct" class="form-select bg-dark text-white border-secondary" onchange="calcularTotalReserva()" required></select>
                 </div>
                 <div class="col-md-2 mb-3">
                     <label class="form-label text-warning">Cantidad</label>
-                    <input type="number" id="resQty" min="1" max="20" value="1" class="form-control bg-dark text-white border-secondary" required>
+                    <input type="number" id="resQty" min="1" max="20" value="1" class="form-control bg-dark text-white border-secondary" onchange="calcularTotalReserva()" required>
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label text-warning">Método de Pago</label>
@@ -115,6 +115,22 @@
                 <div class="col-md-2 mb-3">
                     <label class="form-label text-warning">Código Anti-Fraude</label>
                     <input type="text" id="resCaptcha" class="form-control bg-dark text-white border-secondary text-center fw-bold text-warning" readonly style="letter-spacing: 3px;" required>
+                </div>
+            </div>
+
+            <!-- SECCIÓN DE CUPÓN / DESCUENTO -->
+            <div class="row align-items-center mb-3 p-3 bg-black border border-secondary rounded">
+                <div class="col-md-6 mb-2 mb-md-0">
+                    <label class="form-label text-warning m-0 fw-bold">🎟️ ¿Tienes un premio o cupón de ruleta?</label>
+                    <div class="input-group mt-1">
+                        <input type="text" id="resCouponInput" class="form-control bg-dark text-white border-secondary" placeholder="Ej: 10% Descuento">
+                        <button type="button" onclick="aplicarCupon()" class="btn btn-warning fw-bold">Aplicar Cupón</button>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <span class="text-muted d-block small">Total Estimado a Pagar:</span>
+                    <span id="resTotalDisplay" class="fs-3 fw-bold text-success">$0 COP</span>
+                    <span id="couponDiscountMsg" class="d-block small text-warning"></span>
                 </div>
             </div>
 
@@ -141,7 +157,7 @@
                 <button onclick="closeAdmin()" class="btn btn-outline-secondary btn-sm">Cerrar Panel</button>
             </div>
             
-            <div id="adminPromoTools" class="mb-4 p-3 bg-dark border border-warning rounded hidden-section">
+            <div id="adminPromoTools" class="mb-4 p-3 bg-dark border border-warning rounded">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="text-warning m-0">📢 Gestión de Promociones y Ruleta</h5>
                     <button id="toggleRouletteBtn" onclick="toggleRouletteStatus()" class="btn btn-sm btn-outline-warning">Cargando estado...</button>
@@ -221,7 +237,6 @@
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
     import { getDatabase, ref, set, push, onValue, remove, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-    // Configuración del proyecto Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyBLfJyBKCo_Gpu1N9f8Fy-X68THPE_8ht4",
         authDomain: "urbangrill-6c433.firebaseapp.com",
@@ -240,6 +255,7 @@
     window.currentUser = null;
     let currentCaptcha = "";
     let isRouletteEnabled = true;
+    let cuponAplicado = null;
 
     const products = [
         { id: 1, name: 'Chuzo de Pollo', desc: 'Pechuga marinada a la parrilla con arepa y queso.', price: 9000, rating: '⭐⭐⭐⭐⭐ (4.9)', img: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=80' },
@@ -249,7 +265,7 @@
 
     const rouletteOptions = ["10% Descuento", "Gira de nuevo", "$1.000 Descuento", "Cede el turno", "¡Bono Especial!", "Gira de nuevo"];
 
-    // EXPORTACIÓN A WINDOW PARA EVENTOS ONCLICK
+    // EXPORTACIÓN DE FUNCIONES A WINDOW
     window.loginWithGoogle = function() {
         const provider = new GoogleAuthProvider();
         signInWithPopup(auth, provider).catch((error) => {
@@ -279,6 +295,41 @@
         set(ref(database, 'ruleta_activa'), !isRouletteEnabled).then(() => {
             showAlert(isRouletteEnabled ? "Ruleta deshabilitada." : "Ruleta habilitada.");
         });
+    };
+
+    window.calcularTotalReserva = function() {
+        const prodName = document.getElementById('resProduct').value;
+        const qty = parseInt(document.getElementById('resQty').value) || 1;
+        const prodObj = products.find(p => p.name === prodName);
+        let baseTotal = (prodObj ? prodObj.price : 0) * qty;
+        let finalTotal = baseTotal;
+
+        if (cuponAplicado) {
+            if (cuponAplicado.includes("10%")) {
+                finalTotal = baseTotal * 0.90;
+                document.getElementById('couponDiscountMsg').innerText = "✓ Descuento del 10% aplicado";
+            } else if (cuponAplicado.includes("1.000")) {
+                finalTotal = Math.max(0, baseTotal - 1000);
+                document.getElementById('couponDiscountMsg').innerText = "✓ Descuento de $1.000 COP aplicado";
+            } else if (cuponAplicado.includes("Bono")) {
+                finalTotal = Math.max(0, baseTotal - 2000);
+                document.getElementById('couponDiscountMsg').innerText = "✓ Bono Especial de $2.000 COP aplicado";
+            }
+        } else {
+            document.getElementById('couponDiscountMsg').innerText = "";
+        }
+
+        document.getElementById('resTotalDisplay').innerText = `$${finalTotal.toLocaleString()} COP`;
+        return finalTotal;
+    };
+
+    window.aplicarCupon = function() {
+        const code = document.getElementById('resCouponInput').value.trim();
+        if (!code) return alert("Ingresa un código de premio.");
+
+        cuponAplicado = code;
+        window.calcularTotalReserva();
+        showAlert(`¡Cupón "${code}" aplicado a tu reserva!`);
     };
 
     window.spinRoulette = function() {
@@ -316,6 +367,7 @@
                 });
 
                 document.getElementById('walletPrize').innerText = `🎁 ${randomOption} (Guardado en tu cuenta)`;
+                document.getElementById('resCouponInput').value = randomOption;
             }, 3000);
         });
     };
@@ -348,20 +400,19 @@
         let qty = parseInt(document.getElementById('resQty').value);
         let paymentMethod = document.getElementById('resPaymentMethod').value;
         let time = document.getElementById('resTime').value;
+        let totalFinal = window.calcularTotalReserva();
 
-        let prodObj = products.find(p => p.name === product);
-        let total = (prodObj ? prodObj.price : 0) * qty;
         let referenceCode = 'UG-SEC-' + Math.floor(1000 + Math.random() * 9000);
 
         const fileInput = document.getElementById('resReceiptFile');
         if (paymentMethod === 'Transferencia' && fileInput.files && fileInput.files[0]) {
             const reader = new FileReader();
             reader.onload = function(uploadEvent) {
-                saveToFirebase(referenceCode, name, phone, product, qty, paymentMethod, time, total, uploadEvent.target.result);
+                saveToFirebase(referenceCode, name, phone, product, qty, paymentMethod, time, totalFinal, uploadEvent.target.result);
             };
             reader.readAsDataURL(fileInput.files[0]);
         } else {
-            saveToFirebase(referenceCode, name, phone, product, qty, paymentMethod, time, total, null);
+            saveToFirebase(referenceCode, name, phone, product, qty, paymentMethod, time, totalFinal, null);
         }
     };
 
@@ -414,7 +465,7 @@
         document.getElementById('adminPanel').classList.add('hidden-section');
     };
 
-    // FUNCIONES INTERNAS AUXILIARES
+    // AUXILIARES Y RENDERIZADO
     function showAlert(msg) {
         const box = document.getElementById('alertBox');
         box.innerHTML = `<div class="alert alert-success alert-dismissible fade show shadow mb-4" role="alert">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
@@ -446,6 +497,7 @@
         });
         document.getElementById('menuList').innerHTML = menuHTML;
         document.getElementById('resProduct').innerHTML = selectHTML;
+        window.calcularTotalReserva();
     }
 
     function saveToFirebase(refCode, name, phone, product, qty, paymentMethod, time, total, receiptBase64) {
@@ -465,9 +517,11 @@
         push(ref(database, 'reservas'), newRecord).then(() => {
             showAlert(`¡Reserva segura guardada con éxito! Referencia: ${refCode}`);
             document.getElementById('reserveForm').reset();
+            cuponAplicado = null;
             if (window.currentUser) document.getElementById('resName').value = window.currentUser.displayName;
             window.toggleReceiptField();
             generateCaptcha();
+            window.calcularTotalReserva();
         });
     }
 
@@ -480,19 +534,21 @@
                 let prizeKey = Object.keys(data)[0];
                 let prizeObj = data[prizeKey];
                 walletText.innerText = `🎁 ${prizeObj.prize} (Guardado en tu cuenta)`;
+                document.getElementById('resCouponInput').value = prizeObj.prize;
             } else {
                 walletText.innerText = "No tienes premios activos. ¡Gira la ruleta!";
             }
         });
     }
 
-    // OBSERVADORES EN TIEMPO REAL DE FIREBASE
+    // LISTENER DE AUTHENTICATION
     onAuthStateChanged(auth, (user) => {
         window.currentUser = user;
         const authSec = document.getElementById('authSection');
         const profileSec = document.getElementById('userProfileSection');
         const nameDisplay = document.getElementById('userNameDisplay');
         const spinBtn = document.getElementById('spinBtn');
+        const wheelDisplay = document.getElementById('wheelDisplay');
         const subtext = document.getElementById('rouletteSubtext');
         const wallet = document.getElementById('userWallet');
 
@@ -504,6 +560,7 @@
 
             if (isRouletteEnabled) {
                 spinBtn.disabled = false;
+                wheelDisplay.innerText = "¡Gira!";
                 subtext.innerText = `¡Hola ${user.displayName}! Puedes girar la ruleta (1 vez):`;
             }
             wallet.classList.remove('hidden-section');
@@ -512,24 +569,27 @@
             authSec.classList.remove('hidden-section');
             profileSec.classList.add('hidden-section');
             spinBtn.disabled = true;
+            wheelDisplay.innerText = "Inicia sesión";
             subtext.innerText = "Inicia sesión con Google para girar la ruleta y guardar tu premio en tu cuenta:";
             wallet.classList.add('hidden-section');
         }
     });
 
+    // LISTENERS TIEMPO REAL
     onValue(ref(database, 'ruleta_activa'), (snapshot) => {
         const val = snapshot.val();
         isRouletteEnabled = val !== false;
         const toggleBtn = document.getElementById('toggleRouletteBtn');
+        const spinBtn = document.getElementById('spinBtn');
 
         if (isRouletteEnabled) {
-            if (window.currentUser) document.getElementById('spinBtn').disabled = false;
+            if (window.currentUser) spinBtn.disabled = false;
             if (toggleBtn) {
                 toggleBtn.className = "btn btn-sm btn-outline-danger";
                 toggleBtn.innerText = "🚫 Deshabilitar Ruleta";
             }
         } else {
-            document.getElementById('spinBtn').disabled = true;
+            spinBtn.disabled = true;
             if (toggleBtn) {
                 toggleBtn.className = "btn btn-sm btn-outline-success";
                 toggleBtn.innerText = "✅ Habilitar Ruleta";
@@ -606,7 +666,6 @@
         document.getElementById('totalOrders').innerText = orderCount;
     });
 
-    // INICIALIZACIÓN INICIAL
     renderMenu();
     generateCaptcha();
 </script>
