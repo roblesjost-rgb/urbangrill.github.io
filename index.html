@@ -35,7 +35,7 @@
     <div class="container">
         <a class="navbar-brand text-warning fw-bold fs-3" href="#">🔥 Urban Grill</a>
         <div class="d-flex align-items-center">
-            <a href="https://instagram.com/street_urbangrill" target="_blank" class="btn btn-outline-warning me-2 btn-sm"><i class="bi bi-instagram"></i></a>
+            <a href="https://instagram.com/street_urbangrill" target="_blank" class="btn btn-outline-warning me-2 btn-sm"><i class="bi bi-instagram"></i> Instagram</a>
             
             <!-- SECCIÓN DE USUARIO / GOOGLE LOGIN -->
             <div id="authSection" class="me-2">
@@ -83,7 +83,7 @@
         </div>
     </div>
 
-    <!-- RESERVA -->
+    <!-- RESERVA CON SEGURIDAD -->
     <div id="reservar" class="card p-4 mb-5 shadow">
         <h3 class="text-warning mb-3">📅 Haz tu Reserva en la Nube (Segura)</h3>
         <form id="reserveForm" onsubmit="handleReserve(event)">
@@ -203,7 +203,7 @@
     </div>
 </div>
 
-<!-- MODAL PARA VER EL COMPROBANTE EN GRANDE -->
+<!-- MODAL PARA VER COMPROBANTE -->
 <div class="modal fade" id="receiptModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content bg-dark text-white border-warning">
@@ -221,16 +221,17 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     // ==========================================
-    // CONFIGURACIÓN DE FIREBASE
+    // CONFIGURACIÓN REAL DE FIREBASE (URBAN GRILL)
     // ==========================================
     const firebaseConfig = {
-        apiKey: "TU_API_KEY",
+        apiKey: "AIzaSyBLfJyBKCo_Gpu1N9f8Fy-X68THPE_8ht4",
         authDomain: "urbangrill-6c433.firebaseapp.com",
-        databaseURL: "https://urbangrill-6c433-default-rtdb.firebaseio.com/",
+        databaseURL: "https://urbangrill-6c433-default-rtdb.firebaseio.com",
         projectId: "urbangrill-6c433",
-        storageBucket: "urbangrill-6c433.appspot.com",
-        messagingSenderId: "TU_SENDER_ID",
-        appId: "TU_APP_ID"
+        storageBucket: "urbangrill-6c433.firebasestorage.app",
+        messagingSenderId: "747175851752",
+        appId: "1:747175851752:web:dcd8c95bc80adef369fb5d",
+        measurementId: "G-ZVK8FB0BTQ"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -241,7 +242,7 @@
     let currentCaptcha = "";
     let isRouletteEnabled = true;
 
-    // GESTIÓN DE GOOGLE AUTHENTICATION
+    // GOOGLE AUTHENTICATION
     function loginWithGoogle() {
         const provider = new firebase.auth.GoogleAuthProvider();
         auth.signInWithPopup(provider).catch((error) => {
@@ -268,8 +269,6 @@
             authSec.classList.add('hidden-section');
             profileSec.classList.remove('hidden-section');
             nameDisplay.innerText = `👤 ${user.displayName}`;
-            
-            // Autocompletar nombre en reserva
             document.getElementById('resName').value = user.displayName;
 
             if (isRouletteEnabled) {
@@ -338,7 +337,6 @@
         }
     }
 
-    // CONTROL DE ESTADO DE RULETA
     function escucharEstadoRuleta() {
         database.ref('ruleta_activa').on('value', (snapshot) => {
             const val = snapshot.val();
@@ -367,7 +365,6 @@
         });
     }
 
-    // RULETA VINCULADA A GOOGLE USER
     const rouletteOptions = ["10% Descuento", "Gira de nuevo", "$1.000 Descuento", "Cede el turno", "¡Bono Especial!", "Gira de nuevo"];
     
     function spinRoulette() {
@@ -450,7 +447,6 @@
         }
     }
 
-    // GUARDAR RESERVA
     function handleReserve(e) {
         e.preventDefault();
         
