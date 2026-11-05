@@ -75,6 +75,7 @@
         <div id="userWallet" class="mt-3 p-3 bg-dark border border-warning rounded hidden-section">
             <h5 class="text-warning">🎟️ Tu Billetera de Premios:</h5>
             <p id="walletPrize" class="text-white m-0">No tienes premios activos.</p>
+            <small id="walletAlertMsg" class="text-info d-block mt-1"></small>
         </div>
     </div>
 
@@ -341,7 +342,7 @@
         const premiosQuery = query(ref(database, 'premios_ruleta'), orderByChild('email'), equalTo(window.currentUser.email));
         get(premiosQuery).then((snapshot) => {
             if (snapshot.exists()) {
-                alert("¡Ya has girado la ruleta con esta cuenta de Google! Tu premio ya está registrado.");
+                alert("¡Ya habías girado la ruleta anteriormente! Tu premio ya se encuentra guardado en tu historial y billetera.");
                 return;
             }
 
@@ -367,6 +368,7 @@
                 });
 
                 document.getElementById('walletPrize').innerText = `🎁 ${randomOption} (Guardado en tu cuenta)`;
+                document.getElementById('walletAlertMsg').innerText = "¡Tienes un premio guardado en tu historial disponible para usar en tus reservas!";
                 document.getElementById('resCouponInput').value = randomOption;
             }, 3000);
         });
@@ -527,16 +529,28 @@
 
     function verificarBilleteraUsuario(email) {
         const walletQuery = query(ref(database, 'premios_ruleta'), orderByChild('email'), equalTo(email));
-        onValue(walletQuery, (snapshot) => {
-            const data = snapshot.val();
+        get(walletQuery).then((snapshot) => {
             const walletText = document.getElementById('walletPrize');
-            if (data) {
+            const alertMsg = document.getElementById('walletAlertMsg');
+            const spinBtn = document.getElementById('spinBtn');
+            const wheelDisplay = document.getElementById('wheelDisplay');
+
+            if (snapshot.exists()) {
+                let data = snapshot.val();
                 let prizeKey = Object.keys(data)[0];
                 let prizeObj = data[prizeKey];
-                walletText.innerText = `🎁 ${prizeObj.prize} (Guardado en tu cuenta)`;
+                
+                walletText.innerText = `🎁 ${prizeObj.prize} (Guardado en tu historial)`;
+                alertMsg.innerText = "⚠️ ¡Atención! Ya habías girado la ruleta anteriormente. Tu premio está guardado en tu cuenta y no has reclamado otro giro nuevo.";
                 document.getElementById('resCouponInput').value = prizeObj.prize;
+                
+                spinBtn.disabled = true;
+                wheelDisplay.innerText = prizeObj.prize;
             } else {
                 walletText.innerText = "No tienes premios activos. ¡Gira la ruleta!";
+                alertMsg.innerText = "✨ ¡Tienes 1 oportunidad disponible para girar la ruleta!";
+                spinBtn.disabled = false;
+                wheelDisplay.innerText = "¡Gira!";
             }
         });
     }
@@ -558,16 +572,18 @@
             nameDisplay.innerText = `👤 ${user.displayName}`;
             document.getElementById('resName').value = user.displayName;
 
-            if (isRouletteEnabled) {
-                spinBtn.disabled = false;
-                wheelDisplay.innerText = "¡Gira!";
-                subtext.innerText = `¡Hola ${user.displayName}! Puedes girar la ruleta (1 vez):`;
-            }
+            subtext.innerText = `¡Hola ${user.displayName}! Revisa tu historial de premios:`;
             wallet.classList.remove('hidden-section');
             verificarBilleteraUsuario(user.email);
         } else {
             authSec.classList.remove('hidden-section');
             profileSec.classList.add('hidden-section');
+            nameDisplay.innerText = "";
+            document.getElementById('resName').value = "";
+            document.getElementById('resCouponInput').value = "";
+            cuponAplicado = null;
+            window.calcularTotalReserva();
+            
             spinBtn.disabled = true;
             wheelDisplay.innerText = "Inicia sesión";
             subtext.innerText = "Inicia sesión con Google para girar la ruleta y guardar tu premio en tu cuenta:";
@@ -580,16 +596,15 @@
         const val = snapshot.val();
         isRouletteEnabled = val !== false;
         const toggleBtn = document.getElementById('toggleRouletteBtn');
-        const spinBtn = document.getElementById('spinBtn');
 
         if (isRouletteEnabled) {
-            if (window.currentUser) spinBtn.disabled = false;
             if (toggleBtn) {
                 toggleBtn.className = "btn btn-sm btn-outline-danger";
                 toggleBtn.innerText = "🚫 Deshabilitar Ruleta";
             }
         } else {
-            spinBtn.disabled = true;
+            const spinBtn = document.getElementById('spinBtn');
+            if (spinBtn) spinBtn.disabled = true;
             if (toggleBtn) {
                 toggleBtn.className = "btn btn-sm btn-outline-success";
                 toggleBtn.innerText = "✅ Habilitar Ruleta";
