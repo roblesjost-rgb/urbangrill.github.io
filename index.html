@@ -3,211 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Urban Grill - Sistema Oficial con Google</title>
+    <title>Urban Grill - Sistema Oficial</title>
     
     <link rel="icon" href="data:,">
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- SweetAlert2 (Alertas Profesionales) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .navbar { background-color: #1e1e1e; border-bottom: 2px solid #ff6f00; z-index: 1000; }
-        .card { background-color: #1e1e1e; color: #fff; border: 1px solid #333; border-radius: 12px; overflow: hidden; }
+        .card { background-color: #1e1e1e; color: #fff; border: 1px solid #333; border-radius: 12px; overflow: hidden; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(255,111,0,0.2); }
         .card-img-top { height: 200px; object-fit: cover; border-bottom: 3px solid #ff6f00; }
-        .btn-orange { background-color: #ff6f00; color: white; border: none; font-weight: bold; }
-        .btn-orange:hover { background-color: #e66000; color: white; }
-        .hidden-section { display: none; }
-        /* Estilos Ruleta y Promo Banner */
-        .roulette-container { text-align: center; background: #1a1a1a; border: 2px solid #ff6f00; border-radius: 12px; padding: 25px; margin-top: 30px; }
-        .roulette-wheel { width: 200px; height: 200px; border: 8px solid #ff6f00; border-radius: 50%; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold; background: #2a2a2a; color: #ff6f00; transition: transform 3s ease-out; box-shadow: 0 0 20px rgba(255,111,0,0.4); }
+        .btn-orange { background-color: #ff6f00; color: white; border: none; font-weight: bold; border-radius: 8px; }
+        .btn-orange:hover { background-color: #e66000; color: white; transform: scale(1.02); transition: 0.2s;}
+        .hidden-section { display: none !important; }
+        
+        /* Botones Mejorados */
+        .btn-instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: white; border: none; border-radius: 20px; font-weight: bold; padding: 6px 15px; }
+        .btn-instagram:hover { color: white; opacity: 0.9; transform: scale(1.05); transition: 0.3s; }
+        .btn-google { background-color: #ffffff; color: #333; border: none; border-radius: 20px; font-weight: bold; padding: 6px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; }
+        .btn-google:hover { background-color: #f1f1f1; transform: scale(1.05); transition: 0.3s; }
+        .btn-google img { width: 16px; height: 16px; }
+
+        /* Estilos Ruleta */
+        .roulette-container { text-align: center; background: #1a1a1a; border: 2px solid #ff6f00; border-radius: 12px; padding: 25px; margin-top: 30px; overflow: hidden;}
+        .roulette-wheel { width: 180px; height: 180px; border: 8px solid #ff6f00; border-radius: 50%; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; background: #2a2a2a; color: #ff6f00; transition: transform 3s ease-out; box-shadow: 0 0 20px rgba(255,111,0,0.4); text-align: center; padding: 10px;}
         .promo-banner { background: linear-gradient(45deg, #ff6f00, #b34e00); color: white; border-radius: 10px; padding: 15px; margin-bottom: 25px; text-align: center; font-weight: bold; display: none; }
-        .receipt-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #ff6f00; cursor: pointer; }
+        .receipt-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #ff6f00; cursor: pointer; transition: 0.2s;}
+        .receipt-thumb:hover { transform: scale(1.2); }
+
+        /* Estilos para estado de pedidos */
+        .status-select { background: #333; color: white; border: 1px solid #555; border-radius: 5px; padding: 3px; font-size: 0.9rem; }
+        .flag-sus { border: 2px solid #dc3545 !important; background-color: rgba(220,53,69,0.1); }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printableInvoice, #printableInvoice * { visibility: visible; }
+            #printableInvoice { position: absolute; left: 0; top: 0; width: 100%; background: white; color: black; padding: 20px; font-family: monospace; }
+        }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow">
     <div class="container">
         <a class="navbar-brand text-warning fw-bold fs-3" href="#">🔥 Urban Grill</a>
-        <div class="d-flex align-items-center">
-            <a href="https://instagram.com/street_urbangrill" target="_blank" class="btn btn-outline-warning me-2 btn-sm"><i class="bi bi-instagram"></i> Instagram</a>
-            
-            <!-- SECCIÓN DE USUARIO / GOOGLE LOGIN -->
-            <div id="authSection" class="me-2">
-                <button onclick="loginWithGoogle()" class="btn btn-light btn-sm fw-bold"><i class="bi bi-google"></i> Entrar con Google</button>
-            </div>
-            <div id="userProfileSection" class="hidden-section me-2 d-flex align-items-center">
-                <span id="userNameDisplay" class="text-warning me-2 small fw-bold"></span>
-                <button onclick="logoutUser()" class="btn btn-outline-danger btn-sm py-0">Salir</button>
-            </div>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <div class="ms-auto d-flex align-items-center flex-wrap gap-3 mt-3 mt-lg-0 pb-2 pb-lg-0">
+                <a href="https://instagram.com/street_urbangrill" target="_blank" class="btn-instagram shadow-sm"><i class="bi bi-instagram"></i> Instagram</a>
+                
+                <div id="authSection">
+                    <button onclick="loginWithGoogle()" class="btn-google shadow-sm">
+                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="G"> Google
+                    </button>
+                </div>
+                <div id="userProfileSection" class="hidden-section d-flex align-items-center bg-dark px-3 py-1 rounded-pill border border-secondary shadow-sm">
+                    <span id="userNameDisplay" class="text-warning me-3 small fw-bold"></span>
+                    <button onclick="logoutUser()" class="btn btn-outline-danger btn-sm py-0 rounded-pill">Salir</button>
+                </div>
 
-            <a href="#reservar" class="btn btn-outline-light me-2 btn-sm">Reservar</a>
-            <button onclick="requestAccess('accounting')" class="btn btn-success me-2 btn-sm">📊 Contador</button>
-            <button onclick="requestAccess('admin')" class="btn btn-orange btn-sm">⚙️ Admin</button>
+                <a href="#reservar" class="btn btn-outline-light btn-sm rounded-pill">Hacer Pedido</a>
+                <button onclick="requestAccess('accounting')" class="btn btn-success btn-sm rounded-pill shadow-sm"><i class="bi bi-calculator"></i> Contador</button>
+                <button onclick="requestAccess('admin')" class="btn btn-orange btn-sm rounded-pill shadow-sm"><i class="bi bi-gear-fill"></i> Admin</button>
+            </div>
         </div>
     </div>
 </nav>
 
 <div class="container my-5 pt-5">
-    <div id="alertBox"></div>
-
-    <!-- FLASHBACK DE PROMOCIONES -->
-    <div id="promoBanner" class="promo-banner shadow">
+    <div id="promoBanner" class="promo-banner shadow-lg">
         <span id="promoText">📢 ¡Promoción Activa!</span>
     </div>
 
-    <!-- MENÚ CON CALIFICACIONES -->
-    <div id="menu" class="pt-2 mb-4">
-        <h2 class="text-warning mb-3">🍢 Nuestro Menú de Chuzos</h2>
-        <div class="row" id="menuList"></div>
+    <!-- MENÚ -->
+    <div id="menu" class="pt-2 mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-warning fw-bold m-0"><i class="bi bi-fire"></i> Nuestro Menú</h2>
+            <span class="badge bg-danger fs-6 rounded-pill">Feria Empresarial</span>
+        </div>
+        <div class="row g-4" id="menuList"></div>
     </div>
 
-    <!-- RULETA DE DESCUENTOS (Vinculada a Google) -->
-    <div class="roulette-container mb-5 shadow">
-        <h3 class="text-warning mb-3">🎡 Ruleta de Descuentos Urban Grill</h3>
-        <p id="rouletteSubtext" class="text-muted">Inicia sesión con Google para girar la ruleta y guardar tu premio en tu cuenta:</p>
+    <!-- RULETA -->
+    <div class="roulette-container mb-5 shadow-lg">
+        <h3 class="text-warning mb-2 fw-bold">🎡 Ruleta de Descuentos</h3>
+        <p id="rouletteSubtext" class="text-muted small">Inicia sesión con Google para girar y ganar bonos para tu reserva.</p>
         
-        <div id="wheelDisplay" class="roulette-wheel">Inicia sesión</div>
-        <button id="spinBtn" onclick="spinRoulette()" class="btn btn-orange px-4 py-2" disabled>Girar Ruleta</button>
+        <div id="wheelDisplay" class="roulette-wheel shadow">Inicia sesión</div>
+        <button id="spinBtn" onclick="spinRoulette()" class="btn btn-orange px-5 py-2 rounded-pill fs-5" disabled>¡Girar Ruleta!</button>
         <p id="rouletteResult" class="mt-3 text-info fw-bold fs-5"></p>
         
-        <!-- Billetera de Premios del Usuario -->
-        <div id="userWallet" class="mt-3 p-3 bg-dark border border-warning rounded hidden-section">
-            <h5 class="text-warning">🎟️ Tu Billetera de Premios:</h5>
-            <p id="walletPrize" class="text-white m-0">No tienes premios activos.</p>
-            <small id="walletAlertMsg" class="text-info d-block mt-1"></small>
+        <div id="userWallet" class="mt-3 p-3 bg-black border border-warning rounded shadow hidden-section">
+            <h5 class="text-warning fw-bold m-0"><i class="bi bi-ticket-perforated-fill"></i> Tu Premio Guardado:</h5>
+            <p id="walletPrize" class="text-white fs-4 fw-bold mt-2 mb-0">Ninguno</p>
+            <small id="walletAlertMsg" class="text-info d-block mt-1">Copia este código en la sección de reservas.</small>
         </div>
     </div>
 
-    <!-- RESERVA CON SEGURIDAD Y APLICACIÓN DE CUPÓN -->
-    <div id="reservar" class="card p-4 mb-5 shadow">
-        <h3 class="text-warning mb-3">📅 Haz tu Reserva en la Nube (Segura)</h3>
+    <!-- RESERVAS SEGURAS -->
+    <div id="reservar" class="card p-4 p-md-5 mb-5 shadow-lg border-warning">
+        <h3 class="text-warning mb-4 fw-bold"><i class="bi bi-cart-check-fill"></i> Registra tu Pedido</h3>
         <form id="reserveForm" onsubmit="handleReserve(event)">
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label text-warning">Nombre Completo</label>
-                    <input type="text" id="resName" class="form-control bg-dark text-white border-secondary" required>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label text-warning fw-bold">Nombre Completo</label>
+                    <input type="text" id="resName" class="form-control bg-dark text-white border-secondary" placeholder="Ej: Bolin..." required>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label text-warning">Teléfono / WhatsApp</label>
-                    <input type="tel" id="resPhone" class="form-control bg-dark text-white border-secondary" placeholder="Mínimo 7 dígitos" required>
+                <div class="col-md-6">
+                    <label class="form-label text-warning fw-bold">Teléfono / WhatsApp</label>
+                    <input type="number" id="resPhone" class="form-control bg-dark text-white border-secondary" placeholder="Ej: 3001234567" required>
                 </div>
-            </div>
-            <div class="row">
-                <div class="col-md-3 mb-3">
-                    <label class="form-label text-warning">Selecciona tu Chuzo</label>
-                    <select id="resProduct" class="form-select bg-dark text-white border-secondary" onchange="calcularTotalReserva()" required></select>
+                <div class="col-md-5">
+                    <label class="form-label text-warning fw-bold">Selecciona tu Chuzo</label>
+                    <select id="resProduct" class="form-select bg-dark text-white border-secondary fw-bold" onchange="calcularTotalReserva()" required></select>
                 </div>
-                <div class="col-md-2 mb-3">
-                    <label class="form-label text-warning">Cantidad</label>
-                    <input type="number" id="resQty" min="1" max="20" value="1" class="form-control bg-dark text-white border-secondary" onchange="calcularTotalReserva()" required>
+                <div class="col-md-3">
+                    <label class="form-label text-warning fw-bold">Cantidad</label>
+                    <input type="number" id="resQty" min="1" max="50" value="1" class="form-control bg-dark text-white border-secondary fw-bold text-center" onchange="calcularTotalReserva()" required>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label text-warning">Método de Pago</label>
-                    <select id="resPaymentMethod" class="form-select bg-dark text-white border-secondary" onchange="toggleReceiptField()" required>
-                        <option value="Efectivo">Efectivo</option>
-                        <option value="Transferencia">Transferencia</option>
-                    </select>
-                </div>
-                <div class="col-md-2 mb-3">
-                    <label class="form-label text-warning">Hora</label>
+                <div class="col-md-4">
+                    <label class="form-label text-warning fw-bold">Hora de recogida</label>
                     <input type="time" id="resTime" class="form-control bg-dark text-white border-secondary" required>
                 </div>
-                <div class="col-md-2 mb-3">
-                    <label class="form-label text-warning">Código Anti-Fraude</label>
-                    <input type="text" id="resCaptcha" class="form-control bg-dark text-white border-secondary text-center fw-bold text-warning" readonly style="letter-spacing: 3px;" required>
+                <div class="col-md-12 mt-4">
+                    <label class="form-label text-warning fw-bold">Método de Pago</label>
+                    <select id="resPaymentMethod" class="form-select bg-dark text-white border-secondary" onchange="toggleReceiptField()" required>
+                        <option value="Efectivo">💵 Efectivo (Pago en el stand)</option>
+                        <option value="Transferencia">📱 Transferencia (Nequi/Daviplata)</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- SECCIÓN DE CUPÓN / DESCUENTO -->
-            <div class="row align-items-center mb-3 p-3 bg-black border border-secondary rounded">
-                <div class="col-md-6 mb-2 mb-md-0">
-                    <label class="form-label text-warning m-0 fw-bold">🎟️ ¿Tienes un premio o cupón de ruleta?</label>
-                    <div class="input-group mt-1">
-                        <input type="text" id="resCouponInput" class="form-control bg-dark text-white border-secondary" placeholder="Ej: 10% Descuento">
-                        <button type="button" onclick="aplicarCupon()" class="btn btn-warning fw-bold">Aplicar Cupón</button>
+            <!-- CUPÓN -->
+            <div class="row align-items-center mt-4 p-3 bg-black border border-secondary rounded shadow-sm">
+                <div class="col-md-7 mb-3 mb-md-0">
+                    <label class="form-label text-warning m-0 fw-bold">🎟️ ¿Tienes un premio de ruleta?</label>
+                    <div class="input-group mt-2">
+                        <input type="text" id="resCouponInput" class="form-control bg-dark text-white border-secondary" placeholder="Pega aquí tu premio">
+                        <button type="button" onclick="aplicarCupon()" class="btn btn-outline-warning fw-bold">Aplicar</button>
                     </div>
                 </div>
-                <div class="col-md-6 text-md-end">
-                    <span class="text-muted d-block small">Total Estimado a Pagar:</span>
-                    <span id="resTotalDisplay" class="fs-3 fw-bold text-success">$0 COP</span>
-                    <span id="couponDiscountMsg" class="d-block small text-warning"></span>
+                <div class="col-md-5 text-md-end">
+                    <span class="text-muted d-block small">Total a Pagar:</span>
+                    <span id="resTotalDisplay" class="fs-2 fw-bold text-success">$0 COP</span>
+                    <span id="couponDiscountMsg" class="d-block small text-warning fw-bold"></span>
                 </div>
             </div>
 
-            <div id="receiptContainer" class="mb-3 hidden-section p-3 bg-dark border border-warning rounded">
-                <label class="form-label text-warning">📸 Adjuntar Comprobante de Transferencia (Imagen)</label>
+            <div id="receiptContainer" class="mt-3 hidden-section p-3 bg-dark border border-info rounded">
+                <label class="form-label text-info fw-bold">📸 Adjuntar Comprobante (Obligatorio)</label>
                 <input type="file" id="resReceiptFile" accept="image/*" class="form-control bg-black text-white border-secondary">
-                <small class="text-muted">Sube una captura de pantalla clara de la transferencia.</small>
+                <small class="text-muted">Sube el pantallazo de tu transferencia para verificar el pago.</small>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label text-warning">Escribe el código de seguridad de arriba para verificar:</label>
-                <input type="text" id="resCaptchaInput" class="form-control bg-dark text-white border-secondary" placeholder="Ingresa los 4 dígitos" required>
+            <div class="mt-4 bg-dark p-3 rounded border border-secondary text-center">
+                <label class="form-label text-warning fw-bold">Verificación de Seguridad</label>
+                <div class="d-flex justify-content-center align-items-center gap-3">
+                    <input type="text" id="resCaptcha" class="form-control bg-black text-white border-secondary text-center fw-bold text-danger fs-4 w-25" readonly style="letter-spacing: 5px;">
+                    <i class="bi bi-arrow-right text-muted fs-4"></i>
+                    <input type="text" id="resCaptchaInput" class="form-control bg-black text-white border-warning text-center w-50" placeholder="Escribe el código" required>
+                </div>
             </div>
 
-            <button type="submit" class="btn btn-orange w-100 py-3 mt-2">Confirmar Reserva Segura</button>
+            <button type="submit" id="btnSubmitReserva" class="btn btn-orange w-100 py-3 mt-4 fs-5 rounded-pill shadow">Confirmar Pedido Seguro y Facturar <i class="bi bi-shield-check"></i></button>
         </form>
     </div>
 
-    <!-- PANEL DE ADMINISTRACIÓN Y CONTADOR -->
+    <!-- PANELES DE ADMINISTRACIÓN Y CONTADOR -->
     <div id="adminPanel" class="hidden-section mb-5 pt-4">
-        <div class="card p-4 shadow border-warning">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 id="panelTitle" class="text-warning m-0">⚙️ Panel de Control Seguro</h1>
-                <button onclick="closeAdmin()" class="btn btn-outline-secondary btn-sm">Cerrar Panel</button>
+        <div class="card p-4 shadow-lg border-warning">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+                <h2 id="panelTitle" class="text-warning m-0 fw-bold">⚙️ Panel de Control</h2>
+                <div>
+                    <button id="btnExportExcel" onclick="exportarCSV()" class="btn btn-success fw-bold hidden-section me-2"><i class="bi bi-file-earmark-excel"></i> Exportar Datos (Excel)</button>
+                    <button onclick="closeAdmin()" class="btn btn-outline-secondary">Cerrar Sesión Panel</button>
+                </div>
             </div>
             
-            <div id="adminPromoTools" class="mb-4 p-3 bg-dark border border-warning rounded">
+            <div id="adminPromoTools" class="mb-4 p-3 bg-dark border border-warning rounded shadow-sm">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="text-warning m-0">📢 Gestión de Promociones y Ruleta</h5>
-                    <button id="toggleRouletteBtn" onclick="toggleRouletteStatus()" class="btn btn-sm btn-outline-warning">Cargando estado...</button>
+                    <h5 class="text-warning m-0 fw-bold"><i class="bi bi-megaphone"></i> Marketing y Ruleta</h5>
+                    <button id="toggleRouletteBtn" onclick="toggleRouletteStatus()" class="btn btn-sm btn-outline-warning">Cargando...</button>
                 </div>
-                <div class="row">
-                    <div class="col-md-8 mb-2">
-                        <input type="text" id="adminPromoText" class="form-control bg-black text-white border-secondary" placeholder="Texto de la promoción flash">
+                <div class="row g-2">
+                    <div class="col-md-9">
+                        <input type="text" id="adminPromoText" class="form-control bg-black text-white border-secondary" placeholder="Escribe una promoción flash para mostrar a todos...">
                     </div>
-                    <div class="col-md-4 mb-2">
-                        <button onclick="publishPromo()" class="btn btn-orange w-100">Publicar Promo</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="accountingSummary" class="row mb-4 hidden-section">
-                <div class="col-md-6 mb-3">
-                    <div class="p-3 bg-dark border border-success rounded">
-                        <h5 class="text-success">Total Ventas Estimadas</h5>
-                        <h3 id="totalRevenue" class="text-white m-0">$0 COP</h3>
-                    </div>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <div class="p-3 bg-dark border border-info rounded">
-                        <h5 class="text-info">Total Pedidos Registrados</h5>
-                        <h3 id="totalOrders" class="text-white m-0">0</h3>
+                    <div class="col-md-3">
+                        <button onclick="publishPromo()" class="btn btn-orange w-100 fw-bold">Publicar Banner</button>
                     </div>
                 </div>
             </div>
 
-            <h4 class="text-warning mt-3 mb-3">📋 Pedidos Registrados</h4>
-            <div class="table-responsive mb-5">
-                <table class="table table-dark table-striped align-middle">
+            <div id="accountingSummary" class="row mb-4 hidden-section g-3">
+                <div class="col-md-4">
+                    <div class="p-3 bg-dark border border-success rounded text-center shadow-sm">
+                        <p class="text-success m-0 small fw-bold">Total Ingresos Estimados</p>
+                        <h3 id="totalRevenue" class="text-white m-0 mt-2">$0</h3>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-dark border border-info rounded text-center shadow-sm">
+                        <p class="text-info m-0 small fw-bold">Pedidos Totales</p>
+                        <h3 id="totalOrders" class="text-white m-0 mt-2">0</h3>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-dark border border-danger rounded text-center shadow-sm">
+                        <p class="text-danger m-0 small fw-bold">Alertas de Seguridad</p>
+                        <h3 id="totalAlerts" class="text-white m-0 mt-2">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="text-warning mt-4 mb-3 fw-bold"><i class="bi bi-list-check"></i> Gestión de Pedidos</h4>
+            <div class="table-responsive mb-5 bg-dark rounded border border-secondary p-2">
+                <table class="table table-dark table-hover align-middle mb-0">
                     <thead>
-                        <tr><th>Referencia</th><th>Cliente</th><th>Teléfono</th><th>Producto</th><th>Cant.</th><th>Total</th><th>Pago / Comprobante</th><th>Acción</th></tr>
+                        <tr class="text-warning"><th>ID / Hora</th><th>Cliente</th><th>Pedido</th><th>Total</th><th>Pago</th><th>Estado Logístico</th><th>Acción</th></tr>
                     </thead>
                     <tbody id="reservationsTable">
-                        <tr><td colspan="8" class="text-muted text-center">Cargando datos de la nube...</td></tr>
+                        <tr><td colspan="7" class="text-muted text-center py-4">Cargando base de datos segura...</td></tr>
                     </tbody>
                 </table>
             </div>
 
-            <h4 class="text-warning mb-3">🎡 Descuentos y Premios Ganados en la Ruleta</h4>
-            <div class="table-responsive">
-                <table class="table table-dark table-striped align-middle">
-                    <thead>
-                        <tr><th>Usuario (Google)</th><th>Premio / Descuento</th><th>Fecha y Hora</th><th>Acción</th></tr>
-                    </thead>
+            <h4 class="text-warning mb-3 fw-bold"><i class="bi bi-gift"></i> Auditoría de Premios</h4>
+            <div class="table-responsive bg-dark rounded border border-secondary p-2">
+                <table class="table table-dark table-sm table-striped align-middle mb-0">
+                    <thead><tr class="text-info"><th>Cliente (Google)</th><th>Premio</th><th>Fecha y Hora</th></tr></thead>
                     <tbody id="rouletteWinnersTable">
-                        <tr><td colspan="4" class="text-muted text-center">Cargando premios de la nube...</td></tr>
+                        <tr><td colspan="3" class="text-muted text-center py-3">Cargando auditoría...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -215,475 +248,63 @@
     </div>
 </div>
 
-<!-- MODAL PARA VER COMPROBANTE -->
+<!-- MODAL COMPROBANTE -->
 <div class="modal fade" id="receiptModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content bg-dark text-white border-warning">
-      <div class="modal-header">
-        <h5 class="modal-title text-warning">📸 Comprobante de Pago</h5>
+    <div class="modal-content bg-dark text-white border-info shadow-lg">
+      <div class="modal-header border-info">
+        <h5 class="modal-title text-info fw-bold"><i class="bi bi-receipt"></i> Verificación de Pago</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body text-center">
-        <img id="modalReceiptImg" src="" class="img-fluid rounded border border-secondary" alt="Comprobante">
+      <div class="modal-body text-center p-4">
+        <img id="modalReceiptImg" src="" class="img-fluid rounded shadow" alt="Comprobante">
       </div>
     </div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- MODAL FACTURA CLIENTE -->
+<div class="modal fade" id="invoiceModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-white border-success shadow-lg">
+        <div class="modal-header border-success">
+          <h5 class="modal-title text-success fw-bold"><i class="bi bi-check-circle-fill"></i> ¡Pedido Exitoso!</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="limpiarFormulario()"></button>
+        </div>
+        <div class="modal-body p-4">
+            <div id="invoiceContent" class="bg-light text-dark p-4 rounded text-center shadow-sm">
+                <h3 class="fw-bold mb-0">URBAN GRILL</h3>
+                <p class="small text-muted mb-3">Feria Empresarial - IE Llano Verde</p>
+                <hr class="border-dark">
+                <div class="text-start font-monospace" style="font-size: 15px;">
+                    <p class="mb-1"><strong>Ticket #:</strong> <span id="invId"></span></p>
+                    <p class="mb-1"><strong>Fecha:</strong> <span id="invDate"></span></p>
+                    <p class="mb-1"><strong>Cliente:</strong> <span id="invName"></span></p>
+                    <p class="mb-3"><strong>Recogida:</strong> <span id="invTime" class="badge bg-dark fs-6"></span></p>
+                    <table class="table table-sm table-borderless font-monospace mb-0">
+                        <tr class="border-bottom border-dark"><th>Cant</th><th>Item</th><th class="text-end">Total</th></tr>
+                        <tr><td id="invQty"></td><td id="invProd"></td><td class="text-end fw-bold" id="invTotal"></td></tr>
+                    </table>
+                    <p class="small mt-2 mb-1 text-danger fw-bold" id="invDiscount"></p>
+                    <hr class="border-dark">
+                    <p class="mb-1"><strong>Pago:</strong> <span id="invPay"></span></p>
+                </div>
+                <h5 class="mt-4 fw-bold">¡GRACIAS POR APOYARNOS!</h5>
+            </div>
+            
+            <div class="mt-4 d-grid gap-3">
+                <button onclick="imprimirFactura()" class="btn btn-success fw-bold rounded-pill"><i class="bi bi-printer-fill"></i> Guardar / Imprimir Ticket</button>
+                <button id="btnWhatsappOrder" class="btn btn-outline-light rounded-pill"><i class="bi bi-whatsapp"></i> Enviar al WhatsApp del Stand</button>
+            </div>
+        </div>
+      </div>
+    </div>
+</div>
 
-<!-- LÓGICA DE FIREBASE MODULAR (ES6) -->
+<div id="printableInvoice" class="hidden-section"></div>
+
+<!-- LIBRERÍAS Y SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    import { getDatabase, ref, set, push, onValue, remove, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyBLfJyBKCo_Gpu1N9f8Fy-X68THPE_8ht4",
-        authDomain: "urbangrill-6c433.firebaseapp.com",
-        databaseURL: "https://urbangrill-6c433-default-rtdb.firebaseio.com",
-        projectId: "urbangrill-6c433",
-        storageBucket: "urbangrill-6c433.firebasestorage.app",
-        messagingSenderId: "747175851752",
-        appId: "1:747175851752:web:dcd8c95bc80adef369fb5d",
-        measurementId: "G-ZVK8FB0BTQ"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const database = getDatabase(app);
-
-    window.currentUser = null;
-    let currentCaptcha = "";
-    let isRouletteEnabled = true;
-    let cuponAplicado = null;
-
-    const products = [
-        { id: 1, name: 'Chuzo de Pollo', desc: 'Pechuga marinada a la parrilla con arepa y queso.', price: 9000, rating: '⭐⭐⭐⭐⭐ (4.9)', img: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=80' },
-        { id: 2, name: 'Chuzo de Chorizo', desc: 'Chorizo artesanal asado al carbón con arepa.', price: 9500, rating: '⭐⭐⭐⭐⭐ (5.0)', img: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80' },
-        { id: 3, name: 'Mixto BBQ', desc: 'Pollo y chorizo marinados en salsa BBQ de la casa.', price: 10000, rating: '⭐⭐⭐⭐⭐ (4.8)', img: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80' }
-    ];
-
-    const rouletteOptions = ["10% Descuento", "Gira de nuevo", "$1.000 Descuento", "Cede el turno", "¡Bono Especial!", "Gira de nuevo"];
-
-    // EXPORTACIÓN DE FUNCIONES A WINDOW
-    window.loginWithGoogle = function() {
-        const provider = new GoogleAuthProvider();
-        signInWithPopup(auth, provider).catch((error) => {
-            alert("Error al iniciar sesión con Google: " + error.message);
-        });
-    };
-
-    window.logoutUser = function() {
-        signOut(auth).then(() => {
-            showAlert("Has cerrado sesión correctamente.");
-        });
-    };
-
-    window.toggleReceiptField = function() {
-        const method = document.getElementById('resPaymentMethod').value;
-        const container = document.getElementById('receiptContainer');
-        if (method === 'Transferencia') {
-            container.classList.remove('hidden-section');
-            document.getElementById('resReceiptFile').required = true;
-        } else {
-            container.classList.add('hidden-section');
-            document.getElementById('resReceiptFile').required = false;
-        }
-    };
-
-    window.toggleRouletteStatus = function() {
-        set(ref(database, 'ruleta_activa'), !isRouletteEnabled).then(() => {
-            showAlert(isRouletteEnabled ? "Ruleta deshabilitada." : "Ruleta habilitada.");
-        });
-    };
-
-    window.calcularTotalReserva = function() {
-        const prodName = document.getElementById('resProduct').value;
-        const qty = parseInt(document.getElementById('resQty').value) || 1;
-        const prodObj = products.find(p => p.name === prodName);
-        let baseTotal = (prodObj ? prodObj.price : 0) * qty;
-        let finalTotal = baseTotal;
-
-        if (cuponAplicado) {
-            if (cuponAplicado.includes("10%")) {
-                finalTotal = baseTotal * 0.90;
-                document.getElementById('couponDiscountMsg').innerText = "✓ Descuento del 10% aplicado";
-            } else if (cuponAplicado.includes("1.000")) {
-                finalTotal = Math.max(0, baseTotal - 1000);
-                document.getElementById('couponDiscountMsg').innerText = "✓ Descuento de $1.000 COP aplicado";
-            } else if (cuponAplicado.includes("Bono")) {
-                finalTotal = Math.max(0, baseTotal - 2000);
-                document.getElementById('couponDiscountMsg').innerText = "✓ Bono Especial de $2.000 COP aplicado";
-            }
-        } else {
-            document.getElementById('couponDiscountMsg').innerText = "";
-        }
-
-        document.getElementById('resTotalDisplay').innerText = `$${finalTotal.toLocaleString()} COP`;
-        return finalTotal;
-    };
-
-    window.aplicarCupon = function() {
-        const code = document.getElementById('resCouponInput').value.trim();
-        if (!code) return alert("Ingresa un código de premio.");
-
-        cuponAplicado = code;
-        window.calcularTotalReserva();
-        showAlert(`¡Cupón "${code}" aplicado a tu reserva!`);
-    };
-
-    window.spinRoulette = function() {
-        if (!window.currentUser) {
-            alert("Debes iniciar sesión con Google para girar la ruleta.");
-            return;
-        }
-
-        const premiosQuery = query(ref(database, 'premios_ruleta'), orderByChild('email'), equalTo(window.currentUser.email));
-        get(premiosQuery).then((snapshot) => {
-            if (snapshot.exists()) {
-                alert("¡Ya habías girado la ruleta anteriormente! Tu premio ya se encuentra guardado en tu historial y billetera.");
-                return;
-            }
-
-            const display = document.getElementById('wheelDisplay');
-            const resultText = document.getElementById('rouletteResult');
-            const btn = document.getElementById('spinBtn');
-            
-            btn.disabled = true;
-            display.style.transform = `rotate(${Math.floor(1500 + Math.random() * 2000)}deg)`;
-            resultText.innerHTML = "Girando ruleta...";
-
-            setTimeout(() => {
-                const randomOption = rouletteOptions[Math.floor(Math.random() * rouletteOptions.length)];
-                display.innerHTML = randomOption;
-                resultText.innerHTML = `🎉 ¡Ganaste: ${randomOption}!`;
-                
-                const timestamp = new Date().toLocaleString('es-CO');
-                push(ref(database, 'premios_ruleta'), {
-                    client: window.currentUser.displayName,
-                    email: window.currentUser.email,
-                    prize: randomOption,
-                    date: timestamp
-                });
-
-                document.getElementById('walletPrize').innerText = `🎁 ${randomOption} (Guardado en tu cuenta)`;
-                document.getElementById('walletAlertMsg').innerText = "¡Tienes un premio guardado en tu historial disponible para usar en tus reservas!";
-                document.getElementById('resCouponInput').value = randomOption;
-            }, 3000);
-        });
-    };
-
-    window.deletePrizeRecord = function(id) {
-        if (confirm("¿Eliminar este registro de premio?")) {
-            remove(ref(database, 'premios_ruleta/' + id));
-        }
-    };
-
-    window.handleReserve = function(e) {
-        e.preventDefault();
-        
-        const captchaInput = document.getElementById('resCaptchaInput').value.trim();
-        if (captchaInput !== currentCaptcha) {
-            alert("❌ El código de seguridad anti-fraude es incorrecto.");
-            generateCaptcha();
-            document.getElementById('resCaptchaInput').value = '';
-            return;
-        }
-
-        let phone = document.getElementById('resPhone').value.trim();
-        if (phone.length < 7) {
-            alert("Por favor ingresa un teléfono válido.");
-            return;
-        }
-
-        let name = document.getElementById('resName').value.trim();
-        let product = document.getElementById('resProduct').value;
-        let qty = parseInt(document.getElementById('resQty').value);
-        let paymentMethod = document.getElementById('resPaymentMethod').value;
-        let time = document.getElementById('resTime').value;
-        let totalFinal = window.calcularTotalReserva();
-
-        let referenceCode = 'UG-SEC-' + Math.floor(1000 + Math.random() * 9000);
-
-        const fileInput = document.getElementById('resReceiptFile');
-        if (paymentMethod === 'Transferencia' && fileInput.files && fileInput.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(uploadEvent) {
-                saveToFirebase(referenceCode, name, phone, product, qty, paymentMethod, time, totalFinal, uploadEvent.target.result);
-            };
-            reader.readAsDataURL(fileInput.files[0]);
-        } else {
-            saveToFirebase(referenceCode, name, phone, product, qty, paymentMethod, time, totalFinal, null);
-        }
-    };
-
-    window.publishPromo = function() {
-        let text = document.getElementById('adminPromoText').value.trim();
-        if (!text) return alert("Escribe un texto para la promoción.");
-        set(ref(database, 'promocion_activa'), { text: text }).then(() => {
-            showAlert("¡Promoción publicada!");
-            document.getElementById('adminPromoText').value = '';
-        });
-    };
-
-    window.showReceiptModal = function(base64Img) {
-        document.getElementById('modalReceiptImg').src = base64Img;
-        const myModal = new bootstrap.Modal(document.getElementById('receiptModal'));
-        myModal.show();
-    };
-
-    window.deleteCloudRecord = function(id) {
-        if (confirm("¿Eliminar este registro de la nube?")) {
-            remove(ref(database, 'reservas/' + id));
-        }
-    };
-
-    window.requestAccess = function(type) {
-        let pass = prompt("Ingresa la contraseña de administración (admin2026):");
-        if (pass === "admin2026") {
-            const panel = document.getElementById('adminPanel');
-            const summary = document.getElementById('accountingSummary');
-            const promoTools = document.getElementById('adminPromoTools');
-            const title = document.getElementById('panelTitle');
-            
-            panel.classList.remove('hidden-section');
-            if (type === 'accounting') {
-                title.innerText = "📊 Panel de Contador y Finanzas";
-                summary.classList.remove('hidden-section');
-                promoTools.classList.add('hidden-section');
-            } else {
-                title.innerText = "⚙️ Panel de Pedidos y Administración Segura";
-                summary.classList.add('hidden-section');
-                promoTools.classList.remove('hidden-section');
-            }
-            panel.scrollIntoView({ behavior: 'smooth' });
-        } else if (pass !== null) {
-            alert("Contraseña incorrecta.");
-        }
-    };
-
-    window.closeAdmin = function() {
-        document.getElementById('adminPanel').classList.add('hidden-section');
-    };
-
-    // AUXILIARES Y RENDERIZADO
-    function showAlert(msg) {
-        const box = document.getElementById('alertBox');
-        box.innerHTML = `<div class="alert alert-success alert-dismissible fade show shadow mb-4" role="alert">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
-        setTimeout(() => box.innerHTML = '', 4000);
-    }
-
-    function generateCaptcha() {
-        currentCaptcha = Math.floor(1000 + Math.random() * 9000).toString();
-        document.getElementById('resCaptcha').value = currentCaptcha;
-    }
-
-    function renderMenu() {
-        let menuHTML = '';
-        let selectHTML = '';
-        products.forEach(p => {
-            menuHTML += `
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 shadow">
-                        <img src="${p.img}" class="card-img-top" alt="${p.name}">
-                        <div class="card-body p-4">
-                            <h5 class="text-warning fw-bold">${p.name}</h5>
-                            <p class="text-light mb-2">${p.desc}</p>
-                            <p class="text-warning mb-2 small">Calificación: ${p.rating}</p>
-                            <p class="fs-4 fw-bold text-white">$${p.price.toLocaleString()} COP</p>
-                        </div>
-                    </div>
-                </div>`;
-            selectHTML += `<option value="${p.name}">${p.name} - $${p.price.toLocaleString()} COP</option>`;
-        });
-        document.getElementById('menuList').innerHTML = menuHTML;
-        document.getElementById('resProduct').innerHTML = selectHTML;
-        window.calcularTotalReserva();
-    }
-
-    function saveToFirebase(refCode, name, phone, product, qty, paymentMethod, time, total, receiptBase64) {
-        let newRecord = {
-            ref: refCode,
-            client: name,
-            userEmail: window.currentUser ? window.currentUser.email : "Invitado",
-            phone: phone,
-            product: product,
-            qty: qty,
-            paymentMethod: paymentMethod,
-            time: time,
-            total: total,
-            receipt: receiptBase64 || "No aplica"
-        };
-
-        push(ref(database, 'reservas'), newRecord).then(() => {
-            showAlert(`¡Reserva segura guardada con éxito! Referencia: ${refCode}`);
-            document.getElementById('reserveForm').reset();
-            cuponAplicado = null;
-            if (window.currentUser) document.getElementById('resName').value = window.currentUser.displayName;
-            window.toggleReceiptField();
-            generateCaptcha();
-            window.calcularTotalReserva();
-        });
-    }
-
-    function verificarBilleteraUsuario(email) {
-        const walletQuery = query(ref(database, 'premios_ruleta'), orderByChild('email'), equalTo(email));
-        get(walletQuery).then((snapshot) => {
-            const walletText = document.getElementById('walletPrize');
-            const alertMsg = document.getElementById('walletAlertMsg');
-            const spinBtn = document.getElementById('spinBtn');
-            const wheelDisplay = document.getElementById('wheelDisplay');
-
-            if (snapshot.exists()) {
-                let data = snapshot.val();
-                let prizeKey = Object.keys(data)[0];
-                let prizeObj = data[prizeKey];
-                
-                walletText.innerText = `🎁 ${prizeObj.prize} (Guardado en tu historial)`;
-                alertMsg.innerText = "⚠️ ¡Atención! Ya habías girado la ruleta anteriormente. Tu premio está guardado en tu cuenta y no has reclamado otro giro nuevo.";
-                document.getElementById('resCouponInput').value = prizeObj.prize;
-                
-                spinBtn.disabled = true;
-                wheelDisplay.innerText = prizeObj.prize;
-            } else {
-                walletText.innerText = "No tienes premios activos. ¡Gira la ruleta!";
-                alertMsg.innerText = "✨ ¡Tienes 1 oportunidad disponible para girar la ruleta!";
-                spinBtn.disabled = false;
-                wheelDisplay.innerText = "¡Gira!";
-            }
-        });
-    }
-
-    // LISTENER DE AUTHENTICATION
-    onAuthStateChanged(auth, (user) => {
-        window.currentUser = user;
-        const authSec = document.getElementById('authSection');
-        const profileSec = document.getElementById('userProfileSection');
-        const nameDisplay = document.getElementById('userNameDisplay');
-        const spinBtn = document.getElementById('spinBtn');
-        const wheelDisplay = document.getElementById('wheelDisplay');
-        const subtext = document.getElementById('rouletteSubtext');
-        const wallet = document.getElementById('userWallet');
-
-        if (user) {
-            authSec.classList.add('hidden-section');
-            profileSec.classList.remove('hidden-section');
-            nameDisplay.innerText = `👤 ${user.displayName}`;
-            document.getElementById('resName').value = user.displayName;
-
-            subtext.innerText = `¡Hola ${user.displayName}! Revisa tu historial de premios:`;
-            wallet.classList.remove('hidden-section');
-            verificarBilleteraUsuario(user.email);
-        } else {
-            authSec.classList.remove('hidden-section');
-            profileSec.classList.add('hidden-section');
-            nameDisplay.innerText = "";
-            document.getElementById('resName').value = "";
-            document.getElementById('resCouponInput').value = "";
-            document.getElementById('walletAlertMsg').innerText = "";
-            cuponAplicado = null;
-            window.calcularTotalReserva();
-            
-            spinBtn.disabled = true;
-            wheelDisplay.innerText = "Inicia sesión";
-            subtext.innerText = "Inicia sesión con Google para girar la ruleta y guardar tu premio en tu cuenta:";
-            wallet.classList.add('hidden-section');
-        }
-    });
-
-    // LISTENERS TIEMPO REAL
-    onValue(ref(database, 'ruleta_activa'), (snapshot) => {
-        const val = snapshot.val();
-        isRouletteEnabled = val !== false;
-        const toggleBtn = document.getElementById('toggleRouletteBtn');
-
-        if (isRouletteEnabled) {
-            if (toggleBtn) {
-                toggleBtn.className = "btn btn-sm btn-outline-danger";
-                toggleBtn.innerText = "🚫 Deshabilitar Ruleta";
-            }
-        } else {
-            const spinBtn = document.getElementById('spinBtn');
-            if (spinBtn) spinBtn.disabled = true;
-            if (toggleBtn) {
-                toggleBtn.className = "btn btn-sm btn-outline-success";
-                toggleBtn.innerText = "✅ Habilitar Ruleta";
-            }
-        }
-    });
-
-    onValue(ref(database, 'promocion_activa'), (snapshot) => {
-        const promo = snapshot.val();
-        const banner = document.getElementById('promoBanner');
-        const promoText = document.getElementById('promoText');
-        if (promo && promo.text) {
-            promoText.innerHTML = `📢 ${promo.text}`;
-            banner.style.display = 'block';
-        } else {
-            banner.style.display = 'none';
-        }
-    });
-
-    onValue(ref(database, 'premios_ruleta'), (snapshot) => {
-        const data = snapshot.val();
-        let rows = '';
-        if (!data) {
-            rows = `<tr><td colspan="4" class="text-muted text-center">No hay premios registrados.</td></tr>`;
-        } else {
-            Object.keys(data).forEach((key) => {
-                let p = data[key];
-                rows += `
-                    <tr>
-                        <td class="text-white fw-bold">${p.client}<br><small class="text-muted">${p.email || ''}</small></td>
-                        <td class="text-warning fw-bold">${p.prize}</td>
-                        <td class="text-info">${p.date}</td>
-                        <td><button onclick="deletePrizeRecord('${key}')" class="btn btn-sm btn-outline-danger">Eliminar</button></td>
-                    </tr>`;
-            });
-        }
-        document.getElementById('rouletteWinnersTable').innerHTML = rows;
-    });
-
-    onValue(ref(database, 'reservas'), (snapshot) => {
-        const data = snapshot.val();
-        let rows = '';
-        let totalRevenue = 0;
-        let orderCount = 0;
-
-        if (!data) {
-            rows = `<tr><td colspan="8" class="text-muted text-center">No hay reservas registradas.</td></tr>`;
-        } else {
-            Object.keys(data).forEach((key) => {
-                let r = data[key];
-                totalRevenue += (r.total || 0);
-                orderCount++;
-
-                let receiptHTML = `<span class="text-muted">Efectivo</span>`;
-                if (r.receipt && r.receipt !== "No aplica") {
-                    receiptHTML = `<img src="${r.receipt}" class="receipt-thumb" onclick="showReceiptModal('${r.receipt}')" title="Ver comprobante" alt="Comprobante">`;
-                }
-
-                rows += `
-                    <tr>
-                        <td class="text-info fw-bold">${r.ref}</td>
-                        <td>${r.client}<br><small class="text-muted">${r.userEmail || ''}</small></td>
-                        <td>${r.phone}</td>
-                        <td class="text-warning">${r.product}</td>
-                        <td>${r.qty}</td>
-                        <td class="text-success">$${(r.total || 0).toLocaleString()} COP</td>
-                        <td>${receiptHTML}</td>
-                        <td><button onclick="deleteCloudRecord('${key}')" class="btn btn-sm btn-outline-danger">Eliminar</button></td>
-                    </tr>`;
-            });
-        }
-        document.getElementById('reservationsTable').innerHTML = rows;
-        document.getElementById('totalRevenue').innerText = `$${totalRevenue.toLocaleString()} COP`;
-        document.getElementById('totalOrders').innerText = orderCount;
-    });
-
-    renderMenu();
-    generateCaptcha();
-</script>
-</body>
-</html>
+    import { getAut
