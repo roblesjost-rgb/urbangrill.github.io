@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Urban Grill - Sincronizado en la Nube</title>
+    <title>Urban Grill - Sistema Oficial</title>
     
-    <!-- Evitar advertencia de favicon -->
     <link rel="icon" href="data:,">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     
@@ -23,9 +21,10 @@
         .btn-orange { background-color: #ff6f00; color: white; border: none; font-weight: bold; }
         .btn-orange:hover { background-color: #e66000; color: white; }
         .hidden-section { display: none; }
-        /* Estilos de la Ruleta */
+        /* Estilos Ruleta y Promo Banner */
         .roulette-container { text-align: center; background: #1a1a1a; border: 2px solid #ff6f00; border-radius: 12px; padding: 25px; margin-top: 30px; }
-        .roulette-wheel { width: 220px; height: 220px; border: 10px solid #ff6f00; border-radius: 50%; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; background: #2a2a2a; color: #ff6f00; transition: transform 3s ease-out; box-shadow: 0 0 20px rgba(255,111,0,0.4); }
+        .roulette-wheel { width: 200px; height: 200px; border: 8px solid #ff6f00; border-radius: 50%; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold; background: #2a2a2a; color: #ff6f00; transition: transform 3s ease-out; box-shadow: 0 0 20px rgba(255,111,0,0.4); }
+        .promo-banner { background: linear-gradient(45deg, #ff6f00, #b34e00); color: white; border-radius: 10px; padding: 15px; margin-bottom: 25px; text-align: center; font-weight: bold; display: none; }
     </style>
 </head>
 <body>
@@ -45,23 +44,36 @@
 <div class="container my-5 pt-5">
     <div id="alertBox"></div>
 
-    <!-- MENÚ -->
-    <div id="menu" class="pt-4 mb-4">
+    <!-- FLASHBACK DE PROMOCIONES (Dinámico) -->
+    <div id="promoBanner" class="promo-banner shadow">
+        <span id="promoText">📢 ¡Promoción Activa!</span>
+    </div>
+
+    <!-- MENÚ CON CALIFICACIONES -->
+    <div id="menu" class="pt-2 mb-4">
         <h2 class="text-warning mb-3">🍢 Nuestro Menú de Chuzos</h2>
         <div class="row" id="menuList"></div>
     </div>
 
-    <!-- RULETA DE DESCUENTOS -->
+    <!-- RULETA DE DESCUENTOS (Antifraude: 1 giro por usuario) -->
     <div class="roulette-container mb-5 shadow">
-        <h3 class="text-warning mb-3">🎡 Ruleta de Premios y Descuentos</h3>
-        <div id="wheelDisplay" class="roulette-wheel">¡Gira y Gana!</div>
-        <button onclick="spinRoulette()" class="btn btn-orange px-4 py-2">Girar Ruleta</button>
+        <h3 class="text-warning mb-3">🎡 Ruleta de Descuentos Urban Grill</h3>
+        <div id="rouletteFormSection">
+            <p class="text-muted">Ingresa tu nombre para habilitar tu giro único:</p>
+            <div class="row justify-content-center">
+                <div class="col-md-6 mb-3">
+                    <input type="text" id="spinUser" class="form-control bg-dark text-white border-secondary text-center" placeholder="Tu Nombre o Apodo">
+                </div>
+            </div>
+        </div>
+        <div id="wheelDisplay" class="roulette-wheel">¡Listo para Girar!</div>
+        <button id="spinBtn" onclick="spinRoulette()" class="btn btn-orange px-4 py-2">Girar Ruleta</button>
         <p id="rouletteResult" class="mt-3 text-info fw-bold fs-5"></p>
     </div>
 
     <!-- RESERVA -->
     <div id="reservar" class="card p-4 mb-5 shadow">
-        <h3 class="text-warning mb-3">📅 Haz tu Reserva Sincronizada</h3>
+        <h3 class="text-warning mb-3">📅 Haz tu Reserva en la Nube</h3>
         <form id="reserveForm" onsubmit="handleReserve(event)">
             <div class="row">
                 <div class="col-md-6 mb-3">
@@ -94,19 +106,32 @@
                     <input type="time" id="resTime" class="form-control bg-dark text-white border-secondary" required>
                 </div>
             </div>
-            <button type="submit" class="btn btn-orange w-100 py-3 mt-2">Confirmar Reserva en la Nube</button>
+            <button type="submit" class="btn btn-orange w-100 py-3 mt-2">Confirmar Reserva Sincronizada</button>
         </form>
     </div>
 
-    <!-- PANEL DE ADMINISTRACIÓN / CONTADOR -->
+    <!-- PANEL DE ADMINISTRACIÓN Y CONTADOR -->
     <div id="adminPanel" class="hidden-section mb-5 pt-4">
         <div class="card p-4 shadow border-warning">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 id="panelTitle" class="text-warning m-0">⚙️ Panel de Registros (Nube)</h1>
+                <h1 id="panelTitle" class="text-warning m-0">⚙️ Panel de Control</h1>
                 <button onclick="closeAdmin()" class="btn btn-outline-secondary btn-sm">Cerrar Panel</button>
             </div>
             
-            <!-- Resumen Financiero para el Contador -->
+            <!-- Herramienta Admin: Crear Promoción Flash -->
+            <div id="adminPromoTools" class="mb-4 p-3 bg-dark border border-warning rounded hidden-section">
+                <h5 class="text-warning">📢 Gestionar Promoción Flash (Banner)</h5>
+                <div class="row">
+                    <div class="col-md-8 mb-2">
+                        <input type="text" id="adminPromoText" class="form-control bg-black text-white border-secondary" placeholder="Texto de la promoción (ej: ¡2x1 en Chuzos Mixtos hoy!)">
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <button onclick="publishPromo()" class="btn btn-orange w-100">Publicar Promo</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen Financiero -->
             <div id="accountingSummary" class="row mb-4 hidden-section">
                 <div class="col-md-6 mb-3">
                     <div class="p-3 bg-dark border border-success rounded">
@@ -154,9 +179,9 @@
     const database = firebase.database();
 
     let products = [
-        { id: 1, name: 'Chuzo de Pollo', desc: 'Pechuga marinada a la parrilla con arepa y queso.', price: 9000, img: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=80' },
-        { id: 2, name: 'Chuzo de Chorizo', desc: 'Chorizo artesanal asado al carbón con arepa.', price: 9500, img: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80' },
-        { id: 3, name: 'Mixto BBQ', desc: 'Pollo y chorizo marinados en salsa BBQ de la casa.', price: 10000, img: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80' }
+        { id: 1, name: 'Chuzo de Pollo', desc: 'Pechuga marinada a la parrilla con arepa y queso.', price: 9000, rating: '⭐⭐⭐⭐⭐ (4.9)', img: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=80' },
+        { id: 2, name: 'Chuzo de Chorizo', desc: 'Chorizo artesanal asado al carbón con arepa.', price: 9500, rating: '⭐⭐⭐⭐⭐ (5.0)', img: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80' },
+        { id: 3, name: 'Mixto BBQ', desc: 'Pollo y chorizo marinados en salsa BBQ de la casa.', price: 10000, rating: '⭐⭐⭐⭐⭐ (4.8)', img: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80' }
     ];
 
     function showAlert(msg) {
@@ -175,7 +200,8 @@
                         <img src="${p.img}" class="card-img-top" alt="${p.name}">
                         <div class="card-body p-4">
                             <h5 class="text-warning fw-bold">${p.name}</h5>
-                            <p class="text-light">${p.desc}</p>
+                            <p class="text-light mb-2">${p.desc}</p>
+                            <p class="text-warning mb-2 small">Calificación: ${p.rating}</p>
                             <p class="fs-4 fw-bold text-white">$${p.price.toLocaleString()} COP</p>
                         </div>
                     </div>
@@ -186,18 +212,67 @@
         document.getElementById('resProduct').innerHTML = selectHTML;
     }
 
-    // RULETA DE DESCUENTOS (Sin comida, solo descuentos y turnos)
-    const rouletteOptions = ["10% Descuento", "Gira de nuevo", "$1.000 Descuento", "Cede el turno", "¡Sorteo Especial!", "Gira de nuevo"];
+    // RULETA ANTIFRAUDE (1 giro único por usuario validado)
+    const rouletteOptions = ["10% Descuento", "Gira de nuevo", "$1.000 Descuento", "Cede el turno", "¡Bono Especial!", "Gira de nuevo"];
     function spinRoulette() {
+        const userName = document.getElementById('spinUser').value.trim();
+        if (!userName) {
+            alert("Por favor ingresa tu nombre antes de girar la ruleta.");
+            document.getElementById('spinUser').focus();
+            return;
+        }
+
+        // Verificar si el usuario ya giró en este dispositivo
+        let rotatedUsers = JSON.parse(localStorage.getItem('ug_rotated_users') || '[]');
+        if (rotatedUsers.includes(userName.toLowerCase())) {
+            alert(`¡Hola ${userName}, ya utilizaste tu giro en la ruleta! Solo se permite un giro por cliente.`);
+            return;
+        }
+
         const display = document.getElementById('wheelDisplay');
         const resultText = document.getElementById('rouletteResult');
-        display.style.transform = `rotate(${Math.floor(1000 + Math.random() * 2000)}deg)`;
+        const btn = document.getElementById('spinBtn');
+        
+        btn.disabled = true;
+        display.style.transform = `rotate(${Math.floor(1500 + Math.random() * 2000)}deg)`;
         resultText.innerHTML = "Girando ruleta...";
+
         setTimeout(() => {
             const randomOption = rouletteOptions[Math.floor(Math.random() * rouletteOptions.length)];
             display.innerHTML = randomOption;
-            resultText.innerHTML = `🎉 ¡Resultado: ${randomOption}!`;
+            resultText.innerHTML = `🎉 ¡Felicidades ${userName}, ganaste: ${randomOption}!`;
+            
+            // Guardar usuario en lista de bloqueados locales para evitar trampa
+            rotatedUsers.push(userName.toLowerCase());
+            localStorage.setItem('ug_rotated_users', JSON.stringify(rotatedUsers));
+            document.getElementById('spinUser').disabled = true;
         }, 3000);
+    }
+
+    // GESTIÓN DE PROMOCIONES FLASH (Sincronizadas en la nube)
+    function publishPromo() {
+        let text = document.getElementById('adminPromoText').value.trim();
+        if (!text) return alert("Escribe un texto para la promoción.");
+        
+        database.ref('promocion_activa').set({ text: text })
+            .then(() => {
+                showAlert("¡Promoción publicada en la nube con éxito!");
+                document.getElementById('adminPromoText').value = '';
+            });
+    }
+
+    function escucharPromocion() {
+        database.ref('promocion_activa').on('value', (snapshot) => {
+            const promo = snapshot.val();
+            const banner = document.getElementById('promoBanner');
+            const promoText = document.getElementById('promoText');
+            if (promo && promo.text) {
+                promoText.innerHTML = `📢 ${promo.text}`;
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
+        });
     }
 
     // GUARDAR EN REALTIME DATABASE
@@ -236,7 +311,7 @@
             });
     }
 
-    // ESCUCHAR CAMBIOS Y CALCULAR CONTABILIDAD EN TIEMPO REAL
+    // ESCUCHAR RESERVAS EN TIEMPO REAL
     function escucharReservasNube() {
         database.ref('reservas').on('value', (snapshot) => {
             const data = snapshot.val();
@@ -282,15 +357,18 @@
         if (pass === "admin2026") {
             const panel = document.getElementById('adminPanel');
             const summary = document.getElementById('accountingSummary');
+            const promoTools = document.getElementById('adminPromoTools');
             const title = document.getElementById('panelTitle');
             
             panel.classList.remove('hidden-section');
             if (type === 'accounting') {
                 title.innerText = "📊 Panel de Contador y Finanzas";
                 summary.classList.remove('hidden-section');
+                promoTools.classList.add('hidden-section');
             } else {
                 title.innerText = "⚙️ Panel de Pedidos y Administración";
                 summary.classList.add('hidden-section');
+                promoTools.classList.remove('hidden-section');
             }
             panel.scrollIntoView({ behavior: 'smooth' });
         } else if (pass !== null) {
@@ -304,6 +382,7 @@
 
     renderMenu();
     escucharReservasNube();
+    escucharPromocion();
 </script>
 </body>
 </html>
