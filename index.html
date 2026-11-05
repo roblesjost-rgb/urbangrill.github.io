@@ -8,11 +8,6 @@
     <link rel="icon" href="data:,">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    
-    <!-- LIBRERÍAS DE FIREBASE COMPAT (App, Auth y Database) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <style>
         body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -219,10 +214,14 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    // ==========================================
-    // CONFIGURACIÓN REAL DE FIREBASE (URBAN GRILL) - CDN
-    // ==========================================
+
+<!-- LÓGICA DE FIREBASE MODULAR (ES6) -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getDatabase, ref, set, push, onValue, remove, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+    // Configuración del proyecto Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyBLfJyBKCo_Gpu1N9f8Fy-X68THPE_8ht4",
         authDomain: "urbangrill-6c433.firebaseapp.com",
@@ -234,99 +233,37 @@
         measurementId: "G-ZVK8FB0BTQ"
     };
 
-    // Inicialización compatible con los scripts de CDN cargados
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-    const auth = firebase.auth();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
 
-    let currentUser = null;
+    window.currentUser = null;
     let currentCaptcha = "";
     let isRouletteEnabled = true;
 
-    // GOOGLE AUTHENTICATION
-    function loginWithGoogle() {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch((error) => {
-            alert("Error al iniciar sesión con Google: " + error.message);
-        });
-    }
-
-    function logoutUser() {
-        auth.signOut().then(() => {
-            showAlert("Has cerrado sesión correctamente.");
-        });
-    }
-
-    auth.onAuthStateChanged((user) => {
-        currentUser = user;
-        const authSec = document.getElementById('authSection');
-        const profileSec = document.getElementById('userProfileSection');
-        const nameDisplay = document.getElementById('userNameDisplay');
-        const spinBtn = document.getElementById('spinBtn');
-        const subtext = document.getElementById('rouletteSubtext');
-        const wallet = document.getElementById('userWallet');
-
-        if (user) {
-            authSec.classList.add('hidden-section');
-            profileSec.classList.remove('hidden-section');
-            nameDisplay.innerText = `👤 ${user.displayName}`;
-            document.getElementById('resName').value = user.displayName;
-
-            if (isRouletteEnabled) {
-                spinBtn.disabled = false;
-                subtext.innerText = `¡Hola ${user.displayName}! Puedes girar la ruleta (1 vez):`;
-            }
-            wallet.classList.remove('hidden-section');
-            verificarBilleteraUsuario(user.email);
-        } else {
-            authSec.classList.remove('hidden-section');
-            profileSec.classList.add('hidden-section');
-            spinBtn.disabled = true;
-            subtext.innerText = "Inicia sesión con Google para girar la ruleta y guardar tu premio en tu cuenta:";
-            wallet.classList.add('hidden-section');
-        }
-    });
-
-    function generateCaptcha() {
-        currentCaptcha = Math.floor(1000 + Math.random() * 9000).toString();
-        document.getElementById('resCaptcha').value = currentCaptcha;
-    }
-
-    let products = [
+    const products = [
         { id: 1, name: 'Chuzo de Pollo', desc: 'Pechuga marinada a la parrilla con arepa y queso.', price: 9000, rating: '⭐⭐⭐⭐⭐ (4.9)', img: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=80' },
         { id: 2, name: 'Chuzo de Chorizo', desc: 'Chorizo artesanal asado al carbón con arepa.', price: 9500, rating: '⭐⭐⭐⭐⭐ (5.0)', img: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80' },
         { id: 3, name: 'Mixto BBQ', desc: 'Pollo y chorizo marinados en salsa BBQ de la casa.', price: 10000, rating: '⭐⭐⭐⭐⭐ (4.8)', img: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80' }
     ];
 
-    function showAlert(msg) {
-        const box = document.getElementById('alertBox');
-        box.innerHTML = `<div class="alert alert-success alert-dismissible fade show shadow mb-4" role="alert">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
-        setTimeout(() => box.innerHTML = '', 4000);
-    }
+    const rouletteOptions = ["10% Descuento", "Gira de nuevo", "$1.000 Descuento", "Cede el turno", "¡Bono Especial!", "Gira de nuevo"];
 
-    function renderMenu() {
-        let menuHTML = '';
-        let selectHTML = '';
-        products.forEach(p => {
-            menuHTML += `
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 shadow">
-                        <img src="${p.img}" class="card-img-top" alt="${p.name}">
-                        <div class="card-body p-4">
-                            <h5 class="text-warning fw-bold">${p.name}</h5>
-                            <p class="text-light mb-2">${p.desc}</p>
-                            <p class="text-warning mb-2 small">Calificación: ${p.rating}</p>
-                            <p class="fs-4 fw-bold text-white">$${p.price.toLocaleString()} COP</p>
-                        </div>
-                    </div>
-                </div>`;
-            selectHTML += `<option value="${p.name}">${p.name} - $${p.price.toLocaleString()} COP</option>`;
+    // EXPORTACIÓN A WINDOW PARA EVENTOS ONCLICK
+    window.loginWithGoogle = function() {
+        const provider = new GoogleAuthProvider();
+        signInWithPopup(auth, provider).catch((error) => {
+            alert("Error al iniciar sesión con Google: " + error.message);
         });
-        document.getElementById('menuList').innerHTML = menuHTML;
-        document.getElementById('resProduct').innerHTML = selectHTML;
-    }
+    };
 
-    function toggleReceiptField() {
+    window.logoutUser = function() {
+        signOut(auth).then(() => {
+            showAlert("Has cerrado sesión correctamente.");
+        });
+    };
+
+    window.toggleReceiptField = function() {
         const method = document.getElementById('resPaymentMethod').value;
         const container = document.getElementById('receiptContainer');
         if (method === 'Transferencia') {
@@ -336,45 +273,22 @@
             container.classList.add('hidden-section');
             document.getElementById('resReceiptFile').required = false;
         }
-    }
+    };
 
-    function escucharEstadoRuleta() {
-        database.ref('ruleta_activa').on('value', (snapshot) => {
-            const val = snapshot.val();
-            isRouletteEnabled = val !== false;
-            const toggleBtn = document.getElementById('toggleRouletteBtn');
-
-            if (isRouletteEnabled) {
-                if (currentUser) document.getElementById('spinBtn').disabled = false;
-                if (toggleBtn) {
-                    toggleBtn.className = "btn btn-sm btn-outline-danger";
-                    toggleBtn.innerText = "🚫 Deshabilitar Ruleta";
-                }
-            } else {
-                document.getElementById('spinBtn').disabled = true;
-                if (toggleBtn) {
-                    toggleBtn.className = "btn btn-sm btn-outline-success";
-                    toggleBtn.innerText = "✅ Habilitar Ruleta";
-                }
-            }
-        });
-    }
-
-    function toggleRouletteStatus() {
-        database.ref('ruleta_activa').set(!isRouletteEnabled).then(() => {
+    window.toggleRouletteStatus = function() {
+        set(ref(database, 'ruleta_activa'), !isRouletteEnabled).then(() => {
             showAlert(isRouletteEnabled ? "Ruleta deshabilitada." : "Ruleta habilitada.");
         });
-    }
+    };
 
-    const rouletteOptions = ["10% Descuento", "Gira de nuevo", "$1.000 Descuento", "Cede el turno", "¡Bono Especial!", "Gira de nuevo"];
-    
-    function spinRoulette() {
-        if (!currentUser) {
+    window.spinRoulette = function() {
+        if (!window.currentUser) {
             alert("Debes iniciar sesión con Google para girar la ruleta.");
             return;
         }
 
-        database.ref('premios_ruleta').orderByChild('email').equalTo(currentUser.email).once('value', (snapshot) => {
+        const premiosQuery = query(ref(database, 'premios_ruleta'), orderByChild('email'), equalTo(window.currentUser.email));
+        get(premiosQuery).then((snapshot) => {
             if (snapshot.exists()) {
                 alert("¡Ya has girado la ruleta con esta cuenta de Google! Tu premio ya está registrado.");
                 return;
@@ -394,9 +308,9 @@
                 resultText.innerHTML = `🎉 ¡Ganaste: ${randomOption}!`;
                 
                 const timestamp = new Date().toLocaleString('es-CO');
-                database.ref('premios_ruleta').push({
-                    client: currentUser.displayName,
-                    email: currentUser.email,
+                push(ref(database, 'premios_ruleta'), {
+                    client: window.currentUser.displayName,
+                    email: window.currentUser.email,
                     prize: randomOption,
                     date: timestamp
                 });
@@ -404,51 +318,15 @@
                 document.getElementById('walletPrize').innerText = `🎁 ${randomOption} (Guardado en tu cuenta)`;
             }, 3000);
         });
-    }
+    };
 
-    function verificarBilleteraUsuario(email) {
-        database.ref('premios_ruleta').orderByChild('email').equalTo(email).on('value', (snapshot) => {
-            const data = snapshot.val();
-            const walletText = document.getElementById('walletPrize');
-            if (data) {
-                let prizeKey = Object.keys(data)[0];
-                let prizeObj = data[prizeKey];
-                walletText.innerText = `🎁 ${prizeObj.prize} (Guardado en tu cuenta)`;
-            } else {
-                walletText.innerText = "No tienes premios activos. ¡Gira la ruleta!";
-            }
-        });
-    }
-
-    function escucharPremiosRuleta() {
-        database.ref('premios_ruleta').on('value', (snapshot) => {
-            const data = snapshot.val();
-            let rows = '';
-            if (!data) {
-                rows = `<tr><td colspan="4" class="text-muted text-center">No hay premios registrados.</td></tr>`;
-            } else {
-                Object.keys(data).forEach((key) => {
-                    let p = data[key];
-                    rows += `
-                        <tr>
-                            <td class="text-white fw-bold">${p.client}<br><small class="text-muted">${p.email || ''}</small></td>
-                            <td class="text-warning fw-bold">${p.prize}</td>
-                            <td class="text-info">${p.date}</td>
-                            <td><button onclick="deletePrizeRecord('${key}')" class="btn btn-sm btn-outline-danger">Eliminar</button></td>
-                        </tr>`;
-                });
-            }
-            document.getElementById('rouletteWinnersTable').innerHTML = rows;
-        });
-    }
-
-    function deletePrizeRecord(id) {
+    window.deletePrizeRecord = function(id) {
         if (confirm("¿Eliminar este registro de premio?")) {
-            database.ref('premios_ruleta/' + id).remove();
+            remove(ref(database, 'premios_ruleta/' + id));
         }
-    }
+    };
 
-    function handleReserve(e) {
+    window.handleReserve = function(e) {
         e.preventDefault();
         
         const captchaInput = document.getElementById('resCaptchaInput').value.trim();
@@ -485,107 +363,30 @@
         } else {
             saveToFirebase(referenceCode, name, phone, product, qty, paymentMethod, time, total, null);
         }
-    }
+    };
 
-    function saveToFirebase(refCode, name, phone, product, qty, paymentMethod, time, total, receiptBase64) {
-        let newRecord = {
-            ref: refCode,
-            client: name,
-            userEmail: currentUser ? currentUser.email : "Invitado",
-            phone: phone,
-            product: product,
-            qty: qty,
-            paymentMethod: paymentMethod,
-            time: time,
-            total: total,
-            receipt: receiptBase64 || "No aplica"
-        };
-
-        const newRef = database.ref('reservas').push();
-        newRef.set(newRecord).then(() => {
-            showAlert(`¡Reserva segura guardada con éxito! Referencia: ${refCode}`);
-            document.getElementById('reserveForm').reset();
-            if (currentUser) document.getElementById('resName').value = currentUser.displayName;
-            toggleReceiptField();
-            generateCaptcha();
-        });
-    }
-
-    function publishPromo() {
+    window.publishPromo = function() {
         let text = document.getElementById('adminPromoText').value.trim();
         if (!text) return alert("Escribe un texto para la promoción.");
-        database.ref('promocion_activa').set({ text: text }).then(() => {
+        set(ref(database, 'promocion_activa'), { text: text }).then(() => {
             showAlert("¡Promoción publicada!");
             document.getElementById('adminPromoText').value = '';
         });
-    }
+    };
 
-    function escucharPromocion() {
-        database.ref('promocion_activa').on('value', (snapshot) => {
-            const promo = snapshot.val();
-            const banner = document.getElementById('promoBanner');
-            const promoText = document.getElementById('promoText');
-            if (promo && promo.text) {
-                promoText.innerHTML = `📢 ${promo.text}`;
-                banner.style.display = 'block';
-            } else {
-                banner.style.display = 'none';
-            }
-        });
-    }
-
-    function escucharReservasNube() {
-        database.ref('reservas').on('value', (snapshot) => {
-            const data = snapshot.val();
-            let rows = '';
-            let totalRevenue = 0;
-            let orderCount = 0;
-
-            if (!data) {
-                rows = `<tr><td colspan="8" class="text-muted text-center">No hay reservas registradas.</td></tr>`;
-            } else {
-                Object.keys(data).forEach((key) => {
-                    let r = data[key];
-                    totalRevenue += (r.total || 0);
-                    orderCount++;
-
-                    let receiptHTML = `<span class="text-muted">Efectivo</span>`;
-                    if (r.receipt && r.receipt !== "No aplica") {
-                        receiptHTML = `<img src="${r.receipt}" class="receipt-thumb" onclick="showReceiptModal('${r.receipt}')" title="Ver comprobante" alt="Comprobante">`;
-                    }
-
-                    rows += `
-                        <tr>
-                            <td class="text-info fw-bold">${r.ref}</td>
-                            <td>${r.client}<br><small class="text-muted">${r.userEmail || ''}</small></td>
-                            <td>${r.phone}</td>
-                            <td class="text-warning">${r.product}</td>
-                            <td>${r.qty}</td>
-                            <td class="text-success">$${(r.total || 0).toLocaleString()} COP</td>
-                            <td>${receiptHTML}</td>
-                            <td><button onclick="deleteCloudRecord('${key}')" class="btn btn-sm btn-outline-danger">Eliminar</button></td>
-                        </tr>`;
-                });
-            }
-            document.getElementById('reservationsTable').innerHTML = rows;
-            document.getElementById('totalRevenue').innerText = `$${totalRevenue.toLocaleString()} COP`;
-            document.getElementById('totalOrders').innerText = orderCount;
-        });
-    }
-
-    function showReceiptModal(base64Img) {
+    window.showReceiptModal = function(base64Img) {
         document.getElementById('modalReceiptImg').src = base64Img;
         const myModal = new bootstrap.Modal(document.getElementById('receiptModal'));
         myModal.show();
-    }
+    };
 
-    function deleteCloudRecord(id) {
+    window.deleteCloudRecord = function(id) {
         if (confirm("¿Eliminar este registro de la nube?")) {
-            database.ref('reservas/' + id).remove();
+            remove(ref(database, 'reservas/' + id));
         }
-    }
+    };
 
-    function requestAccess(type) {
+    window.requestAccess = function(type) {
         let pass = prompt("Ingresa la contraseña de administración (admin2026):");
         if (pass === "admin2026") {
             const panel = document.getElementById('adminPanel');
@@ -607,18 +408,207 @@
         } else if (pass !== null) {
             alert("Contraseña incorrecta.");
         }
-    }
+    };
 
-    function closeAdmin() {
+    window.closeAdmin = function() {
         document.getElementById('adminPanel').classList.add('hidden-section');
+    };
+
+    // FUNCIONES INTERNAS AUXILIARES
+    function showAlert(msg) {
+        const box = document.getElementById('alertBox');
+        box.innerHTML = `<div class="alert alert-success alert-dismissible fade show shadow mb-4" role="alert">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+        setTimeout(() => box.innerHTML = '', 4000);
     }
 
+    function generateCaptcha() {
+        currentCaptcha = Math.floor(1000 + Math.random() * 9000).toString();
+        document.getElementById('resCaptcha').value = currentCaptcha;
+    }
+
+    function renderMenu() {
+        let menuHTML = '';
+        let selectHTML = '';
+        products.forEach(p => {
+            menuHTML += `
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow">
+                        <img src="${p.img}" class="card-img-top" alt="${p.name}">
+                        <div class="card-body p-4">
+                            <h5 class="text-warning fw-bold">${p.name}</h5>
+                            <p class="text-light mb-2">${p.desc}</p>
+                            <p class="text-warning mb-2 small">Calificación: ${p.rating}</p>
+                            <p class="fs-4 fw-bold text-white">$${p.price.toLocaleString()} COP</p>
+                        </div>
+                    </div>
+                </div>`;
+            selectHTML += `<option value="${p.name}">${p.name} - $${p.price.toLocaleString()} COP</option>`;
+        });
+        document.getElementById('menuList').innerHTML = menuHTML;
+        document.getElementById('resProduct').innerHTML = selectHTML;
+    }
+
+    function saveToFirebase(refCode, name, phone, product, qty, paymentMethod, time, total, receiptBase64) {
+        let newRecord = {
+            ref: refCode,
+            client: name,
+            userEmail: window.currentUser ? window.currentUser.email : "Invitado",
+            phone: phone,
+            product: product,
+            qty: qty,
+            paymentMethod: paymentMethod,
+            time: time,
+            total: total,
+            receipt: receiptBase64 || "No aplica"
+        };
+
+        push(ref(database, 'reservas'), newRecord).then(() => {
+            showAlert(`¡Reserva segura guardada con éxito! Referencia: ${refCode}`);
+            document.getElementById('reserveForm').reset();
+            if (window.currentUser) document.getElementById('resName').value = window.currentUser.displayName;
+            window.toggleReceiptField();
+            generateCaptcha();
+        });
+    }
+
+    function verificarBilleteraUsuario(email) {
+        const walletQuery = query(ref(database, 'premios_ruleta'), orderByChild('email'), equalTo(email));
+        onValue(walletQuery, (snapshot) => {
+            const data = snapshot.val();
+            const walletText = document.getElementById('walletPrize');
+            if (data) {
+                let prizeKey = Object.keys(data)[0];
+                let prizeObj = data[prizeKey];
+                walletText.innerText = `🎁 ${prizeObj.prize} (Guardado en tu cuenta)`;
+            } else {
+                walletText.innerText = "No tienes premios activos. ¡Gira la ruleta!";
+            }
+        });
+    }
+
+    // OBSERVADORES EN TIEMPO REAL DE FIREBASE
+    onAuthStateChanged(auth, (user) => {
+        window.currentUser = user;
+        const authSec = document.getElementById('authSection');
+        const profileSec = document.getElementById('userProfileSection');
+        const nameDisplay = document.getElementById('userNameDisplay');
+        const spinBtn = document.getElementById('spinBtn');
+        const subtext = document.getElementById('rouletteSubtext');
+        const wallet = document.getElementById('userWallet');
+
+        if (user) {
+            authSec.classList.add('hidden-section');
+            profileSec.classList.remove('hidden-section');
+            nameDisplay.innerText = `👤 ${user.displayName}`;
+            document.getElementById('resName').value = user.displayName;
+
+            if (isRouletteEnabled) {
+                spinBtn.disabled = false;
+                subtext.innerText = `¡Hola ${user.displayName}! Puedes girar la ruleta (1 vez):`;
+            }
+            wallet.classList.remove('hidden-section');
+            verificarBilleteraUsuario(user.email);
+        } else {
+            authSec.classList.remove('hidden-section');
+            profileSec.classList.add('hidden-section');
+            spinBtn.disabled = true;
+            subtext.innerText = "Inicia sesión con Google para girar la ruleta y guardar tu premio en tu cuenta:";
+            wallet.classList.add('hidden-section');
+        }
+    });
+
+    onValue(ref(database, 'ruleta_activa'), (snapshot) => {
+        const val = snapshot.val();
+        isRouletteEnabled = val !== false;
+        const toggleBtn = document.getElementById('toggleRouletteBtn');
+
+        if (isRouletteEnabled) {
+            if (window.currentUser) document.getElementById('spinBtn').disabled = false;
+            if (toggleBtn) {
+                toggleBtn.className = "btn btn-sm btn-outline-danger";
+                toggleBtn.innerText = "🚫 Deshabilitar Ruleta";
+            }
+        } else {
+            document.getElementById('spinBtn').disabled = true;
+            if (toggleBtn) {
+                toggleBtn.className = "btn btn-sm btn-outline-success";
+                toggleBtn.innerText = "✅ Habilitar Ruleta";
+            }
+        }
+    });
+
+    onValue(ref(database, 'promocion_activa'), (snapshot) => {
+        const promo = snapshot.val();
+        const banner = document.getElementById('promoBanner');
+        const promoText = document.getElementById('promoText');
+        if (promo && promo.text) {
+            promoText.innerHTML = `📢 ${promo.text}`;
+            banner.style.display = 'block';
+        } else {
+            banner.style.display = 'none';
+        }
+    });
+
+    onValue(ref(database, 'premios_ruleta'), (snapshot) => {
+        const data = snapshot.val();
+        let rows = '';
+        if (!data) {
+            rows = `<tr><td colspan="4" class="text-muted text-center">No hay premios registrados.</td></tr>`;
+        } else {
+            Object.keys(data).forEach((key) => {
+                let p = data[key];
+                rows += `
+                    <tr>
+                        <td class="text-white fw-bold">${p.client}<br><small class="text-muted">${p.email || ''}</small></td>
+                        <td class="text-warning fw-bold">${p.prize}</td>
+                        <td class="text-info">${p.date}</td>
+                        <td><button onclick="deletePrizeRecord('${key}')" class="btn btn-sm btn-outline-danger">Eliminar</button></td>
+                    </tr>`;
+            });
+        }
+        document.getElementById('rouletteWinnersTable').innerHTML = rows;
+    });
+
+    onValue(ref(database, 'reservas'), (snapshot) => {
+        const data = snapshot.val();
+        let rows = '';
+        let totalRevenue = 0;
+        let orderCount = 0;
+
+        if (!data) {
+            rows = `<tr><td colspan="8" class="text-muted text-center">No hay reservas registradas.</td></tr>`;
+        } else {
+            Object.keys(data).forEach((key) => {
+                let r = data[key];
+                totalRevenue += (r.total || 0);
+                orderCount++;
+
+                let receiptHTML = `<span class="text-muted">Efectivo</span>`;
+                if (r.receipt && r.receipt !== "No aplica") {
+                    receiptHTML = `<img src="${r.receipt}" class="receipt-thumb" onclick="showReceiptModal('${r.receipt}')" title="Ver comprobante" alt="Comprobante">`;
+                }
+
+                rows += `
+                    <tr>
+                        <td class="text-info fw-bold">${r.ref}</td>
+                        <td>${r.client}<br><small class="text-muted">${r.userEmail || ''}</small></td>
+                        <td>${r.phone}</td>
+                        <td class="text-warning">${r.product}</td>
+                        <td>${r.qty}</td>
+                        <td class="text-success">$${(r.total || 0).toLocaleString()} COP</td>
+                        <td>${receiptHTML}</td>
+                        <td><button onclick="deleteCloudRecord('${key}')" class="btn btn-sm btn-outline-danger">Eliminar</button></td>
+                    </tr>`;
+            });
+        }
+        document.getElementById('reservationsTable').innerHTML = rows;
+        document.getElementById('totalRevenue').innerText = `$${totalRevenue.toLocaleString()} COP`;
+        document.getElementById('totalOrders').innerText = orderCount;
+    });
+
+    // INICIALIZACIÓN INICIAL
     renderMenu();
     generateCaptcha();
-    escucharReservasNube();
-    escucharPremiosRuleta();
-    escucharPromocion();
-    escucharEstadoRuleta();
 </script>
 </body>
 </html>
