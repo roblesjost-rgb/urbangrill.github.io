@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Urban Grill - Sistema Oficial</title>
+    <title>Urban Grill - Sistema Oficial con Google</title>
     
     <link rel="icon" href="data:,">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     
-    <!-- LIBRERÍAS DE FIREBASE -->
+    <!-- LIBRERÍAS DE FIREBASE (App, Auth y Database) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <style>
@@ -25,6 +26,7 @@
         .roulette-container { text-align: center; background: #1a1a1a; border: 2px solid #ff6f00; border-radius: 12px; padding: 25px; margin-top: 30px; }
         .roulette-wheel { width: 200px; height: 200px; border: 8px solid #ff6f00; border-radius: 50%; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold; background: #2a2a2a; color: #ff6f00; transition: transform 3s ease-out; box-shadow: 0 0 20px rgba(255,111,0,0.4); }
         .promo-banner { background: linear-gradient(45deg, #ff6f00, #b34e00); color: white; border-radius: 10px; padding: 15px; margin-bottom: 25px; text-align: center; font-weight: bold; display: none; }
+        .receipt-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #ff6f00; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -33,7 +35,17 @@
     <div class="container">
         <a class="navbar-brand text-warning fw-bold fs-3" href="#">🔥 Urban Grill</a>
         <div class="d-flex align-items-center">
-            <a href="https://instagram.com/street_urbangrill" target="_blank" class="btn btn-outline-warning me-2 btn-sm"><i class="bi bi-instagram"></i> Instagram</a>
+            <a href="https://instagram.com/street_urbangrill" target="_blank" class="btn btn-outline-warning me-2 btn-sm"><i class="bi bi-instagram"></i></a>
+            
+            <!-- SECCIÓN DE USUARIO / GOOGLE LOGIN -->
+            <div id="authSection" class="me-2">
+                <button onclick="loginWithGoogle()" class="btn btn-light btn-sm fw-bold"><i class="bi bi-google"></i> Entrar con Google</button>
+            </div>
+            <div id="userProfileSection" class="hidden-section me-2 d-flex align-items-center">
+                <span id="userNameDisplay" class="text-warning me-2 small fw-bold"></span>
+                <button onclick="logoutUser()" class="btn btn-outline-danger btn-sm py-0">Salir</button>
+            </div>
+
             <a href="#reservar" class="btn btn-outline-light me-2 btn-sm">Reservar</a>
             <button onclick="requestAccess('accounting')" class="btn btn-success me-2 btn-sm">📊 Contador</button>
             <button onclick="requestAccess('admin')" class="btn btn-orange btn-sm">⚙️ Admin</button>
@@ -44,7 +56,7 @@
 <div class="container my-5 pt-5">
     <div id="alertBox"></div>
 
-    <!-- FLASHBACK DE PROMOCIONES (Dinámico) -->
+    <!-- FLASHBACK DE PROMOCIONES -->
     <div id="promoBanner" class="promo-banner shadow">
         <span id="promoText">📢 ¡Promoción Activa!</span>
     </div>
@@ -55,25 +67,25 @@
         <div class="row" id="menuList"></div>
     </div>
 
-    <!-- RULETA DE DESCUENTOS (Antifraude: 1 giro por usuario) -->
+    <!-- RULETA DE DESCUENTOS (Vinculada a Google) -->
     <div class="roulette-container mb-5 shadow">
         <h3 class="text-warning mb-3">🎡 Ruleta de Descuentos Urban Grill</h3>
-        <div id="rouletteFormSection">
-            <p class="text-muted">Ingresa tu nombre para habilitar tu giro único:</p>
-            <div class="row justify-content-center">
-                <div class="col-md-6 mb-3">
-                    <input type="text" id="spinUser" class="form-control bg-dark text-white border-secondary text-center" placeholder="Tu Nombre o Apodo">
-                </div>
-            </div>
-        </div>
-        <div id="wheelDisplay" class="roulette-wheel">¡Listo para Girar!</div>
-        <button id="spinBtn" onclick="spinRoulette()" class="btn btn-orange px-4 py-2">Girar Ruleta</button>
+        <p id="rouletteSubtext" class="text-muted">Inicia sesión con Google para girar la ruleta y guardar tu premio en tu cuenta:</p>
+        
+        <div id="wheelDisplay" class="roulette-wheel">Inicia sesión</div>
+        <button id="spinBtn" onclick="spinRoulette()" class="btn btn-orange px-4 py-2" disabled>Girar Ruleta</button>
         <p id="rouletteResult" class="mt-3 text-info fw-bold fs-5"></p>
+        
+        <!-- Billetera de Premios del Usuario -->
+        <div id="userWallet" class="mt-3 p-3 bg-dark border border-warning rounded hidden-section">
+            <h5 class="text-warning">🎟️ Tu Billetera de Premios:</h5>
+            <p id="walletPrize" class="text-white m-0">No tienes premios activos.</p>
+        </div>
     </div>
 
     <!-- RESERVA -->
     <div id="reservar" class="card p-4 mb-5 shadow">
-        <h3 class="text-warning mb-3">📅 Haz tu Reserva en la Nube</h3>
+        <h3 class="text-warning mb-3">📅 Haz tu Reserva en la Nube (Segura)</h3>
         <form id="reserveForm" onsubmit="handleReserve(event)">
             <div class="row">
                 <div class="col-md-6 mb-3">
@@ -82,21 +94,21 @@
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label text-warning">Teléfono / WhatsApp</label>
-                    <input type="text" id="resPhone" class="form-control bg-dark text-white border-secondary" required>
+                    <input type="tel" id="resPhone" class="form-control bg-dark text-white border-secondary" placeholder="Mínimo 7 dígitos" required>
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label class="form-label text-warning">Selecciona tu Chuzo</label>
                     <select id="resProduct" class="form-select bg-dark text-white border-secondary" required></select>
                 </div>
-                <div class="col-md-3 mb-3">
+                <div class="col-md-2 mb-3">
                     <label class="form-label text-warning">Cantidad</label>
-                    <input type="number" id="resQty" min="1" value="1" class="form-control bg-dark text-white border-secondary" required>
+                    <input type="number" id="resQty" min="1" max="20" value="1" class="form-control bg-dark text-white border-secondary" required>
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label text-warning">Método de Pago</label>
-                    <select id="resPaymentMethod" class="form-select bg-dark text-white border-secondary" required>
+                    <select id="resPaymentMethod" class="form-select bg-dark text-white border-secondary" onchange="toggleReceiptField()" required>
                         <option value="Efectivo">Efectivo</option>
                         <option value="Transferencia">Transferencia</option>
                     </select>
@@ -105,8 +117,24 @@
                     <label class="form-label text-warning">Hora</label>
                     <input type="time" id="resTime" class="form-control bg-dark text-white border-secondary" required>
                 </div>
+                <div class="col-md-2 mb-3">
+                    <label class="form-label text-warning">Código Anti-Fraude</label>
+                    <input type="text" id="resCaptcha" class="form-control bg-dark text-white border-secondary text-center fw-bold text-warning" readonly style="letter-spacing: 3px;" required>
+                </div>
             </div>
-            <button type="submit" class="btn btn-orange w-100 py-3 mt-2">Confirmar Reserva Sincronizada</button>
+
+            <div id="receiptContainer" class="mb-3 hidden-section p-3 bg-dark border border-warning rounded">
+                <label class="form-label text-warning">📸 Adjuntar Comprobante de Transferencia (Imagen)</label>
+                <input type="file" id="resReceiptFile" accept="image/*" class="form-control bg-black text-white border-secondary">
+                <small class="text-muted">Sube una captura de pantalla clara de la transferencia.</small>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label text-warning">Escribe el código de seguridad de arriba para verificar:</label>
+                <input type="text" id="resCaptchaInput" class="form-control bg-dark text-white border-secondary" placeholder="Ingresa los 4 dígitos" required>
+            </div>
+
+            <button type="submit" class="btn btn-orange w-100 py-3 mt-2">Confirmar Reserva Segura</button>
         </form>
     </div>
 
@@ -114,16 +142,18 @@
     <div id="adminPanel" class="hidden-section mb-5 pt-4">
         <div class="card p-4 shadow border-warning">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 id="panelTitle" class="text-warning m-0">⚙️ Panel de Control</h1>
+                <h1 id="panelTitle" class="text-warning m-0">⚙️ Panel de Control Seguro</h1>
                 <button onclick="closeAdmin()" class="btn btn-outline-secondary btn-sm">Cerrar Panel</button>
             </div>
             
-            <!-- Herramienta Admin: Crear Promoción Flash -->
             <div id="adminPromoTools" class="mb-4 p-3 bg-dark border border-warning rounded hidden-section">
-                <h5 class="text-warning">📢 Gestionar Promoción Flash (Banner)</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-warning m-0">📢 Gestión de Promociones y Ruleta</h5>
+                    <button id="toggleRouletteBtn" onclick="toggleRouletteStatus()" class="btn btn-sm btn-outline-warning">Cargando estado...</button>
+                </div>
                 <div class="row">
                     <div class="col-md-8 mb-2">
-                        <input type="text" id="adminPromoText" class="form-control bg-black text-white border-secondary" placeholder="Texto de la promoción (ej: ¡2x1 en Chuzos Mixtos hoy!)">
+                        <input type="text" id="adminPromoText" class="form-control bg-black text-white border-secondary" placeholder="Texto de la promoción flash">
                     </div>
                     <div class="col-md-4 mb-2">
                         <button onclick="publishPromo()" class="btn btn-orange w-100">Publicar Promo</button>
@@ -131,7 +161,6 @@
                 </div>
             </div>
 
-            <!-- Resumen Financiero -->
             <div id="accountingSummary" class="row mb-4 hidden-section">
                 <div class="col-md-6 mb-3">
                     <div class="p-3 bg-dark border border-success rounded">
@@ -147,13 +176,26 @@
                 </div>
             </div>
 
+            <h4 class="text-warning mt-3 mb-3">📋 Pedidos Registrados</h4>
+            <div class="table-responsive mb-5">
+                <table class="table table-dark table-striped align-middle">
+                    <thead>
+                        <tr><th>Referencia</th><th>Cliente</th><th>Teléfono</th><th>Producto</th><th>Cant.</th><th>Total</th><th>Pago / Comprobante</th><th>Acción</th></tr>
+                    </thead>
+                    <tbody id="reservationsTable">
+                        <tr><td colspan="8" class="text-muted text-center">Cargando datos de la nube...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4 class="text-warning mb-3">🎡 Descuentos y Premios Ganados en la Ruleta</h4>
             <div class="table-responsive">
                 <table class="table table-dark table-striped align-middle">
                     <thead>
-                        <tr><th>Referencia</th><th>Cliente</th><th>Teléfono</th><th>Producto</th><th>Cant.</th><th>Total</th><th>Acción</th></tr>
+                        <tr><th>Usuario (Google)</th><th>Premio / Descuento</th><th>Fecha y Hora</th><th>Acción</th></tr>
                     </thead>
-                    <tbody id="reservationsTable">
-                        <tr><td colspan="7" class="text-muted text-center">Cargando datos de la nube...</td></tr>
+                    <tbody id="rouletteWinnersTable">
+                        <tr><td colspan="4" class="text-muted text-center">Cargando premios de la nube...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -161,9 +203,25 @@
     </div>
 </div>
 
+<!-- MODAL PARA VER EL COMPROBANTE EN GRANDE -->
+<div class="modal fade" id="receiptModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-warning">
+      <div class="modal-header">
+        <h5 class="modal-title text-warning">📸 Comprobante de Pago</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="modalReceiptImg" src="" class="img-fluid rounded border border-secondary" alt="Comprobante">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     // ==========================================
-    // CONFIGURACIÓN DE FIREBASE REALTIME DATABASE
+    // CONFIGURACIÓN DE FIREBASE
     // ==========================================
     const firebaseConfig = {
         apiKey: "TU_API_KEY",
@@ -177,6 +235,62 @@
 
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
+    const auth = firebase.auth();
+
+    let currentUser = null;
+    let currentCaptcha = "";
+    let isRouletteEnabled = true;
+
+    // GESTIÓN DE GOOGLE AUTHENTICATION
+    function loginWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch((error) => {
+            alert("Error al iniciar sesión con Google: " + error.message);
+        });
+    }
+
+    function logoutUser() {
+        auth.signOut().then(() => {
+            showAlert("Has cerrado sesión correctamente.");
+        });
+    }
+
+    auth.onAuthStateChanged((user) => {
+        currentUser = user;
+        const authSec = document.getElementById('authSection');
+        const profileSec = document.getElementById('userProfileSection');
+        const nameDisplay = document.getElementById('userNameDisplay');
+        const spinBtn = document.getElementById('spinBtn');
+        const subtext = document.getElementById('rouletteSubtext');
+        const wallet = document.getElementById('userWallet');
+
+        if (user) {
+            authSec.classList.add('hidden-section');
+            profileSec.classList.remove('hidden-section');
+            nameDisplay.innerText = `👤 ${user.displayName}`;
+            
+            // Autocompletar nombre en reserva
+            document.getElementById('resName').value = user.displayName;
+
+            if (isRouletteEnabled) {
+                spinBtn.disabled = false;
+                subtext.innerText = `¡Hola ${user.displayName}! Puedes girar la ruleta (1 vez):`;
+            }
+            wallet.classList.remove('hidden-section');
+            verificarBilleteraUsuario(user.email);
+        } else {
+            authSec.classList.remove('hidden-section');
+            profileSec.classList.add('hidden-section');
+            spinBtn.disabled = true;
+            subtext.innerText = "Inicia sesión con Google para girar la ruleta y guardar tu premio en tu cuenta:";
+            wallet.classList.add('hidden-section');
+        }
+    });
+
+    function generateCaptcha() {
+        currentCaptcha = Math.floor(1000 + Math.random() * 9000).toString();
+        document.getElementById('resCaptcha').value = currentCaptcha;
+    }
 
     let products = [
         { id: 1, name: 'Chuzo de Pollo', desc: 'Pechuga marinada a la parrilla con arepa y queso.', price: 9000, rating: '⭐⭐⭐⭐⭐ (4.9)', img: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=80' },
@@ -212,53 +326,201 @@
         document.getElementById('resProduct').innerHTML = selectHTML;
     }
 
-    // RULETA ANTIFRAUDE (1 giro único por usuario validado)
-    const rouletteOptions = ["10% Descuento", "Gira de nuevo", "$1.000 Descuento", "Cede el turno", "¡Bono Especial!", "Gira de nuevo"];
-    function spinRoulette() {
-        const userName = document.getElementById('spinUser').value.trim();
-        if (!userName) {
-            alert("Por favor ingresa tu nombre antes de girar la ruleta.");
-            document.getElementById('spinUser').focus();
-            return;
+    function toggleReceiptField() {
+        const method = document.getElementById('resPaymentMethod').value;
+        const container = document.getElementById('receiptContainer');
+        if (method === 'Transferencia') {
+            container.classList.remove('hidden-section');
+            document.getElementById('resReceiptFile').required = true;
+        } else {
+            container.classList.add('hidden-section');
+            document.getElementById('resReceiptFile').required = false;
         }
-
-        // Verificar si el usuario ya giró en este dispositivo
-        let rotatedUsers = JSON.parse(localStorage.getItem('ug_rotated_users') || '[]');
-        if (rotatedUsers.includes(userName.toLowerCase())) {
-            alert(`¡Hola ${userName}, ya utilizaste tu giro en la ruleta! Solo se permite un giro por cliente.`);
-            return;
-        }
-
-        const display = document.getElementById('wheelDisplay');
-        const resultText = document.getElementById('rouletteResult');
-        const btn = document.getElementById('spinBtn');
-        
-        btn.disabled = true;
-        display.style.transform = `rotate(${Math.floor(1500 + Math.random() * 2000)}deg)`;
-        resultText.innerHTML = "Girando ruleta...";
-
-        setTimeout(() => {
-            const randomOption = rouletteOptions[Math.floor(Math.random() * rouletteOptions.length)];
-            display.innerHTML = randomOption;
-            resultText.innerHTML = `🎉 ¡Felicidades ${userName}, ganaste: ${randomOption}!`;
-            
-            // Guardar usuario en lista de bloqueados locales para evitar trampa
-            rotatedUsers.push(userName.toLowerCase());
-            localStorage.setItem('ug_rotated_users', JSON.stringify(rotatedUsers));
-            document.getElementById('spinUser').disabled = true;
-        }, 3000);
     }
 
-    // GESTIÓN DE PROMOCIONES FLASH (Sincronizadas en la nube)
+    // CONTROL DE ESTADO DE RULETA
+    function escucharEstadoRuleta() {
+        database.ref('ruleta_activa').on('value', (snapshot) => {
+            const val = snapshot.val();
+            isRouletteEnabled = val !== false;
+            const toggleBtn = document.getElementById('toggleRouletteBtn');
+
+            if (isRouletteEnabled) {
+                if (currentUser) document.getElementById('spinBtn').disabled = false;
+                if (toggleBtn) {
+                    toggleBtn.className = "btn btn-sm btn-outline-danger";
+                    toggleBtn.innerText = "🚫 Deshabilitar Ruleta";
+                }
+            } else {
+                document.getElementById('spinBtn').disabled = true;
+                if (toggleBtn) {
+                    toggleBtn.className = "btn btn-sm btn-outline-success";
+                    toggleBtn.innerText = "✅ Habilitar Ruleta";
+                }
+            }
+        });
+    }
+
+    function toggleRouletteStatus() {
+        database.ref('ruleta_activa').set(!isRouletteEnabled).then(() => {
+            showAlert(isRouletteEnabled ? "Ruleta deshabilitada." : "Ruleta habilitada.");
+        });
+    }
+
+    // RULETA VINCULADA A GOOGLE USER
+    const rouletteOptions = ["10% Descuento", "Gira de nuevo", "$1.000 Descuento", "Cede el turno", "¡Bono Especial!", "Gira de nuevo"];
+    
+    function spinRoulette() {
+        if (!currentUser) {
+            alert("Debes iniciar sesión con Google para girar la ruleta.");
+            return;
+        }
+
+        database.ref('premios_ruleta').orderByChild('email').equalTo(currentUser.email).once('value', (snapshot) => {
+            if (snapshot.exists()) {
+                alert("¡Ya has girado la ruleta con esta cuenta de Google! Tu premio ya está registrado.");
+                return;
+            }
+
+            const display = document.getElementById('wheelDisplay');
+            const resultText = document.getElementById('rouletteResult');
+            const btn = document.getElementById('spinBtn');
+            
+            btn.disabled = true;
+            display.style.transform = `rotate(${Math.floor(1500 + Math.random() * 2000)}deg)`;
+            resultText.innerHTML = "Girando ruleta...";
+
+            setTimeout(() => {
+                const randomOption = rouletteOptions[Math.floor(Math.random() * rouletteOptions.length)];
+                display.innerHTML = randomOption;
+                resultText.innerHTML = `🎉 ¡Ganaste: ${randomOption}!`;
+                
+                const timestamp = new Date().toLocaleString('es-CO');
+                database.ref('premios_ruleta').push({
+                    client: currentUser.displayName,
+                    email: currentUser.email,
+                    prize: randomOption,
+                    date: timestamp
+                });
+
+                document.getElementById('walletPrize').innerText = `🎁 ${randomOption} (Guardado en tu cuenta)`;
+            }, 3000);
+        });
+    }
+
+    function verificarBilleteraUsuario(email) {
+        database.ref('premios_ruleta').orderByChild('email').equalTo(email).on('value', (snapshot) => {
+            const data = snapshot.val();
+            const walletText = document.getElementById('walletPrize');
+            if (data) {
+                let prizeKey = Object.keys(data)[0];
+                let prizeObj = data[prizeKey];
+                walletText.innerText = `🎁 ${prizeObj.prize} (Guardado en tu cuenta)`;
+            } else {
+                walletText.innerText = "No tienes premios activos. ¡Gira la ruleta!";
+            }
+        });
+    }
+
+    function escucharPremiosRuleta() {
+        database.ref('premios_ruleta').on('value', (snapshot) => {
+            const data = snapshot.val();
+            let rows = '';
+            if (!data) {
+                rows = `<tr><td colspan="4" class="text-muted text-center">No hay premios registrados.</td></tr>`;
+            } else {
+                Object.keys(data).forEach((key) => {
+                    let p = data[key];
+                    rows += `
+                        <tr>
+                            <td class="text-white fw-bold">${p.client}<br><small class="text-muted">${p.email || ''}</small></td>
+                            <td class="text-warning fw-bold">${p.prize}</td>
+                            <td class="text-info">${p.date}</td>
+                            <td><button onclick="deletePrizeRecord('${key}')" class="btn btn-sm btn-outline-danger">Eliminar</button></td>
+                        </tr>`;
+                });
+            }
+            document.getElementById('rouletteWinnersTable').innerHTML = rows;
+        });
+    }
+
+    function deletePrizeRecord(id) {
+        if (confirm("¿Eliminar este registro de premio?")) {
+            database.ref('premios_ruleta/' + id).remove();
+        }
+    }
+
+    // GUARDAR RESERVA
+    function handleReserve(e) {
+        e.preventDefault();
+        
+        const captchaInput = document.getElementById('resCaptchaInput').value.trim();
+        if (captchaInput !== currentCaptcha) {
+            alert("❌ El código de seguridad anti-fraude es incorrecto.");
+            generateCaptcha();
+            document.getElementById('resCaptchaInput').value = '';
+            return;
+        }
+
+        let phone = document.getElementById('resPhone').value.trim();
+        if (phone.length < 7) {
+            alert("Por favor ingresa un teléfono válido.");
+            return;
+        }
+
+        let name = document.getElementById('resName').value.trim();
+        let product = document.getElementById('resProduct').value;
+        let qty = parseInt(document.getElementById('resQty').value);
+        let paymentMethod = document.getElementById('resPaymentMethod').value;
+        let time = document.getElementById('resTime').value;
+
+        let prodObj = products.find(p => p.name === product);
+        let total = (prodObj ? prodObj.price : 0) * qty;
+        let referenceCode = 'UG-SEC-' + Math.floor(1000 + Math.random() * 9000);
+
+        const fileInput = document.getElementById('resReceiptFile');
+        if (paymentMethod === 'Transferencia' && fileInput.files && fileInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(uploadEvent) {
+                saveToFirebase(referenceCode, name, phone, product, qty, paymentMethod, time, total, uploadEvent.target.result);
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        } else {
+            saveToFirebase(referenceCode, name, phone, product, qty, paymentMethod, time, total, null);
+        }
+    }
+
+    function saveToFirebase(refCode, name, phone, product, qty, paymentMethod, time, total, receiptBase64) {
+        let newRecord = {
+            ref: refCode,
+            client: name,
+            userEmail: currentUser ? currentUser.email : "Invitado",
+            phone: phone,
+            product: product,
+            qty: qty,
+            paymentMethod: paymentMethod,
+            time: time,
+            total: total,
+            receipt: receiptBase64 || "No aplica"
+        };
+
+        const newRef = database.ref('reservas').push();
+        newRef.set(newRecord).then(() => {
+            showAlert(`¡Reserva segura guardada con éxito! Referencia: ${refCode}`);
+            document.getElementById('reserveForm').reset();
+            if (currentUser) document.getElementById('resName').value = currentUser.displayName;
+            toggleReceiptField();
+            generateCaptcha();
+        });
+    }
+
     function publishPromo() {
         let text = document.getElementById('adminPromoText').value.trim();
         if (!text) return alert("Escribe un texto para la promoción.");
-        
-        database.ref('promocion_activa').set({ text: text })
-            .then(() => {
-                showAlert("¡Promoción publicada en la nube con éxito!");
-                document.getElementById('adminPromoText').value = '';
-            });
+        database.ref('promocion_activa').set({ text: text }).then(() => {
+            showAlert("¡Promoción publicada!");
+            document.getElementById('adminPromoText').value = '';
+        });
     }
 
     function escucharPromocion() {
@@ -275,43 +537,6 @@
         });
     }
 
-    // GUARDAR EN REALTIME DATABASE
-    function handleReserve(e) {
-        e.preventDefault();
-        let name = document.getElementById('resName').value;
-        let phone = document.getElementById('resPhone').value;
-        let product = document.getElementById('resProduct').value;
-        let qty = parseInt(document.getElementById('resQty').value);
-        let paymentMethod = document.getElementById('resPaymentMethod').value;
-        let time = document.getElementById('resTime').value;
-
-        let prodObj = products.find(p => p.name === product);
-        let total = (prodObj ? prodObj.price : 0) * qty;
-        let referenceCode = 'UG-NUBE-' + Math.floor(1000 + Math.random() * 9000);
-
-        let newRecord = {
-            ref: referenceCode,
-            client: name,
-            phone: phone,
-            product: product,
-            qty: qty,
-            paymentMethod: paymentMethod,
-            time: time,
-            total: total
-        };
-
-        const newRef = database.ref('reservas').push();
-        newRef.set(newRecord)
-            .then(() => {
-                showAlert(`¡Reserva guardada en la nube con éxito! Referencia: ${referenceCode}`);
-                document.getElementById('reserveForm').reset();
-            })
-            .catch((error) => {
-                alert("Error al guardar: " + error.message);
-            });
-    }
-
-    // ESCUCHAR RESERVAS EN TIEMPO REAL
     function escucharReservasNube() {
         database.ref('reservas').on('value', (snapshot) => {
             const data = snapshot.val();
@@ -320,20 +545,27 @@
             let orderCount = 0;
 
             if (!data) {
-                rows = `<tr><td colspan="7" class="text-muted text-center">No hay reservas registradas en la nube.</td></tr>`;
+                rows = `<tr><td colspan="8" class="text-muted text-center">No hay reservas registradas.</td></tr>`;
             } else {
                 Object.keys(data).forEach((key) => {
                     let r = data[key];
                     totalRevenue += (r.total || 0);
                     orderCount++;
+
+                    let receiptHTML = `<span class="text-muted">Efectivo</span>`;
+                    if (r.receipt && r.receipt !== "No aplica") {
+                        receiptHTML = `<img src="${r.receipt}" class="receipt-thumb" onclick="showReceiptModal('${r.receipt}')" title="Ver comprobante" alt="Comprobante">`;
+                    }
+
                     rows += `
                         <tr>
                             <td class="text-info fw-bold">${r.ref}</td>
-                            <td>${r.client}</td>
+                            <td>${r.client}<br><small class="text-muted">${r.userEmail || ''}</small></td>
                             <td>${r.phone}</td>
                             <td class="text-warning">${r.product}</td>
                             <td>${r.qty}</td>
                             <td class="text-success">$${(r.total || 0).toLocaleString()} COP</td>
+                            <td>${receiptHTML}</td>
                             <td><button onclick="deleteCloudRecord('${key}')" class="btn btn-sm btn-outline-danger">Eliminar</button></td>
                         </tr>`;
                 });
@@ -344,11 +576,15 @@
         });
     }
 
+    function showReceiptModal(base64Img) {
+        document.getElementById('modalReceiptImg').src = base64Img;
+        const myModal = new bootstrap.Modal(document.getElementById('receiptModal'));
+        myModal.show();
+    }
+
     function deleteCloudRecord(id) {
-        if (confirm("¿Estás seguro de eliminar este registro de la nube?")) {
-            database.ref('reservas/' + id).remove().then(() => {
-                showAlert("Registro eliminado de la nube.");
-            });
+        if (confirm("¿Eliminar este registro de la nube?")) {
+            database.ref('reservas/' + id).remove();
         }
     }
 
@@ -366,7 +602,7 @@
                 summary.classList.remove('hidden-section');
                 promoTools.classList.add('hidden-section');
             } else {
-                title.innerText = "⚙️ Panel de Pedidos y Administración";
+                title.innerText = "⚙️ Panel de Pedidos y Administración Segura";
                 summary.classList.add('hidden-section');
                 promoTools.classList.remove('hidden-section');
             }
@@ -381,8 +617,11 @@
     }
 
     renderMenu();
+    generateCaptcha();
     escucharReservasNube();
+    escucharPremiosRuleta();
     escucharPromocion();
+    escucharEstadoRuleta();
 </script>
 </body>
 </html>
