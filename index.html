@@ -25,15 +25,16 @@
         .hidden-section { display: none; }
         /* Estilos de la Ruleta */
         .roulette-container { text-align: center; background: #1a1a1a; border: 2px solid #ff6f00; border-radius: 12px; padding: 25px; margin-top: 30px; }
-        .roulette-wheel { width: 220px; height: 220px; border: 10px solid #ff6f00; border-radius: 50%; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; background: #2a2a2a; color: #ff6f00; transition: transform 3s ease-out; box-shadow: 0 0 20px rgba(255,111,0,0.4); }
+        .roulette-wheel { width: 220px; height: 220px; border: 10px solid #ff6f00; border-radius: 50%; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; background: #2a2a2a; color: #ff6f00; transition: transform 3s ease-out; box-shadow: 0 0 20px rgba(255,111,0,0.4); }
     </style>
 </head>
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
     <div class="container">
-        <a class="navbar-brand text-warning fw-bold fs-3" href="#">🔥 Urban Grill (Nube)</a>
+        <a class="navbar-brand text-warning fw-bold fs-3" href="#">🔥 Urban Grill</a>
         <div class="d-flex align-items-center">
+            <a href="https://instagram.com/street_urbangrill" target="_blank" class="btn btn-outline-warning me-2 btn-sm"><i class="bi bi-instagram"></i> Instagram</a>
             <a href="#reservar" class="btn btn-outline-light me-2 btn-sm">Reservar</a>
             <button onclick="requestAccess('accounting')" class="btn btn-success me-2 btn-sm">📊 Contador</button>
             <button onclick="requestAccess('admin')" class="btn btn-orange btn-sm">⚙️ Admin</button>
@@ -51,7 +52,7 @@
     </div>
 
     <!-- RULETA DE DESCUENTOS -->
-    <div class="roulette-container mb-5">
+    <div class="roulette-container mb-5 shadow">
         <h3 class="text-warning mb-3">🎡 Ruleta de Premios y Descuentos</h3>
         <div id="wheelDisplay" class="roulette-wheel">¡Gira y Gana!</div>
         <button onclick="spinRoulette()" class="btn btn-orange px-4 py-2">Girar Ruleta</button>
@@ -93,7 +94,7 @@
                     <input type="time" id="resTime" class="form-control bg-dark text-white border-secondary" required>
                 </div>
             </div>
-            <button type="submit" class="btn btn-orange w-100 py-3 mt-2">Confirmar Reserva</button>
+            <button type="submit" class="btn btn-orange w-100 py-3 mt-2">Confirmar Reserva en la Nube</button>
         </form>
     </div>
 
@@ -101,19 +102,19 @@
     <div id="adminPanel" class="hidden-section mb-5 pt-4">
         <div class="card p-4 shadow border-warning">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 id="panelTitle" class="text-warning m-0">⚙️ Panel y Registros (Nube)</h1>
+                <h1 id="panelTitle" class="text-warning m-0">⚙️ Panel de Registros (Nube)</h1>
                 <button onclick="closeAdmin()" class="btn btn-outline-secondary btn-sm">Cerrar Panel</button>
             </div>
             
-            <!-- Resumen Financiero para Contador -->
+            <!-- Resumen Financiero para el Contador -->
             <div id="accountingSummary" class="row mb-4 hidden-section">
-                <div class="col-md-6">
+                <div class="col-md-6 mb-3">
                     <div class="p-3 bg-dark border border-success rounded">
                         <h5 class="text-success">Total Ventas Estimadas</h5>
                         <h3 id="totalRevenue" class="text-white m-0">$0 COP</h3>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 mb-3">
                     <div class="p-3 bg-dark border border-info rounded">
                         <h5 class="text-info">Total Pedidos Registrados</h5>
                         <h3 id="totalOrders" class="text-white m-0">0</h3>
@@ -186,7 +187,7 @@
     }
 
     // RULETA DE DESCUENTOS (Sin comida, solo descuentos y turnos)
-    const rouletteOptions = ["10% Descuento", "Gira de nuevo", "$1.000 Descuento", "Cede el turno", "¡Sorteo de Mitad de Precio!", "Gira de nuevo"];
+    const rouletteOptions = ["10% Descuento", "Gira de nuevo", "$1.000 Descuento", "Cede el turno", "¡Sorteo Especial!", "Gira de nuevo"];
     function spinRoulette() {
         const display = document.getElementById('wheelDisplay');
         const resultText = document.getElementById('rouletteResult');
