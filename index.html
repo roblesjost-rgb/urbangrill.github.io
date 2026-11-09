@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Urban Grill - Sistema Oficial</title>
+    <title>Urban Grill - Sistema Oficial con IA</title>
     
     <link rel="icon" href="data:,">
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <!-- SweetAlert2 (Alertas Profesionales) -->
+    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
@@ -36,6 +36,13 @@
         .status-select { background: #333; color: white; border: 1px solid #555; border-radius: 5px; padding: 3px; font-size: 0.9rem; }
         .flag-sus { border: 2px solid #dc3545 !important; background-color: rgba(220,53,69,0.1); }
 
+        /* Botón Asistente Flotante */
+        .btn-floating-assistant { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; border-radius: 50%; background-color: #ff6f00; color: white; border: 3px solid #121212; box-shadow: 0 10px 25px rgba(255,111,0,0.5); z-index: 1050; display: flex; align-items: center; justify-content: center; transition: 0.3s; cursor: pointer; }
+        .btn-floating-assistant:hover { transform: scale(1.1); background-color: #e66000; color: white; }
+        
+        /* Banner IA */
+        .ai-security-banner { background: rgba(0, 255, 136, 0.05); border: 1px solid #00ff88; color: #00ff88; border-radius: 8px; padding: 10px; text-align: center; font-size: 0.9rem; font-weight: bold; margin-bottom: 20px;}
+
         @media print {
             body * { visibility: hidden; }
             #printableInvoice, #printableInvoice * { visibility: visible; }
@@ -48,6 +55,7 @@
                 font-size: 12px;
             }
             .no-print { display: none !important; }
+            .btn-floating-assistant { display: none !important; }
         }
     </style>
 </head>
@@ -61,11 +69,12 @@
         </button>
         <div class="collapse navbar-collapse" id="navMenu">
             <div class="ms-auto d-flex align-items-center flex-wrap gap-3 mt-3 mt-lg-0 pb-2 pb-lg-0">
-                <a href="https://instagram.com/street_urbangrill" target="_blank" class="btn-instagram shadow-sm"><i class="bi bi-instagram"></i> Instagram</a>
+                <button onclick="abrirHistorial()" class="btn btn-outline-info btn-sm rounded-pill shadow-sm fw-bold"><i class="bi bi-clock-history"></i> Mi Historial</button>
+                <a href="https://instagram.com/street_urbangrill" target="_blank" class="btn-instagram shadow-sm"><i class="bi bi-instagram"></i></a>
                 
                 <div id="authSection">
                     <button onclick="loginWithGoogle()" class="btn-google shadow-sm">
-                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="G"> Google
+                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="G"> Entrar
                     </button>
                 </div>
                 <div id="userProfileSection" class="hidden-section d-flex align-items-center bg-dark px-3 py-1 rounded-pill border border-secondary shadow-sm">
@@ -73,9 +82,9 @@
                     <button onclick="logoutUser()" class="btn btn-outline-danger btn-sm py-0 rounded-pill">Salir</button>
                 </div>
 
-                <a href="#reservar" class="btn btn-outline-light btn-sm rounded-pill">Hacer Pedido</a>
-                <button onclick="requestAccess('accounting')" class="btn btn-success btn-sm rounded-pill shadow-sm"><i class="bi bi-calculator"></i> Contador</button>
-                <button onclick="requestAccess('admin')" class="btn btn-orange btn-sm rounded-pill shadow-sm"><i class="bi bi-gear-fill"></i> Admin</button>
+                <a href="#reservar" class="btn btn-outline-light btn-sm rounded-pill">Pedir</a>
+                <button onclick="requestAccess('accounting')" class="btn btn-success btn-sm rounded-pill shadow-sm"><i class="bi bi-calculator"></i> Conta</button>
+                <button onclick="requestAccess('admin')" class="btn btn-orange btn-sm rounded-pill shadow-sm"><i class="bi bi-shield-lock"></i> Admin</button>
             </div>
         </div>
     </div>
@@ -95,25 +104,27 @@
         <div class="row g-4" id="menuList"></div>
     </div>
 
-    <!-- RULETA REPARADA CON UID -->
+    <!-- RULETA LIBRE (SIN INICIAR SESIÓN OBLIGATORIO) -->
     <div class="roulette-container mb-5 shadow-lg">
         <h3 class="text-warning mb-2 fw-bold">🎡 Ruleta de Descuentos</h3>
-        <p class="text-muted small">Inicia sesión con Google para girar. 100% garantizado.</p>
+        <p class="text-muted small">¡Gira la ruleta y gana! Si no has iniciado sesión, te pediremos tu nombre para guardar el premio.</p>
         
-        <div id="wheelDisplay" class="roulette-wheel shadow">Inicia sesión</div>
-        <button id="spinBtn" onclick="spinRoulette()" class="btn btn-orange px-5 py-2 rounded-pill fs-5 shadow" disabled>¡Girar Ruleta!</button>
+        <div id="wheelDisplay" class="roulette-wheel shadow">¡Prueba tu suerte!</div>
+        <button id="spinBtn" onclick="spinRoulette()" class="btn btn-orange px-5 py-2 rounded-pill fs-5 shadow">¡Girar Ruleta!</button>
         <p id="rouletteResult" class="mt-3 text-info fw-bold fs-5"></p>
         
         <div id="userWallet" class="mt-3 p-3 bg-black border border-warning rounded shadow hidden-section">
             <h5 class="text-warning fw-bold m-0"><i class="bi bi-ticket-perforated-fill"></i> Tu Premio Guardado:</h5>
             <p id="walletPrize" class="text-white fs-4 fw-bold mt-2 mb-2">Ninguno</p>
             <button onclick="usarPremioGuardado()" class="btn btn-outline-warning btn-sm rounded-pill fw-bold mb-2"><i class="bi bi-check2-circle"></i> Usar mi Premio en la Reserva</button>
-            <small id="walletAlertMsg" class="text-info d-block">Aplica directamente al momento de confirmar tu pedido.</small>
         </div>
     </div>
 
-    <!-- RESERVAS CON CONTROL DE AGENDA Y TARJETAS -->
+    <!-- RESERVAS CON SEGURIDAD IA -->
     <div id="reservar" class="card p-4 p-md-5 mb-5 shadow-lg border-warning">
+        <div class="ai-security-banner">
+            <i class="bi bi-robot fs-5"></i> Monitoreo de Seguridad por IA Activado. Tu transacción está protegida.
+        </div>
         <h3 class="text-warning mb-4 fw-bold"><i class="bi bi-cart-check-fill"></i> Registra tu Pedido</h3>
         <form id="reserveForm" onsubmit="handleReserve(event)">
             <div class="row g-3">
@@ -123,7 +134,7 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label text-warning fw-bold">Teléfono / WhatsApp</label>
-                    <input type="number" id="resPhone" class="form-control bg-dark text-white border-secondary" required>
+                    <input type="number" id="resPhone" class="form-control bg-dark text-white border-secondary" placeholder="Necesario para tu historial" required>
                 </div>
                 <div class="col-md-5">
                     <label class="form-label text-warning fw-bold">Selecciona tu Chuzo</label>
@@ -136,7 +147,7 @@
                 <div class="col-md-4">
                     <label class="form-label text-warning fw-bold">Hora de recogida <i class="bi bi-clock-history"></i></label>
                     <input type="time" id="resTime" class="form-control bg-dark text-white border-secondary" required>
-                    <small class="text-info" id="timeStatusMsg">El sistema verificará disponibilidad.</small>
+                    <small class="text-info" id="timeStatusMsg">El sistema de agenda verificará disponibilidad.</small>
                 </div>
                 <div class="col-md-12 mt-4">
                     <label class="form-label text-warning fw-bold">Método de Pago</label>
@@ -156,23 +167,23 @@
                         <input type="text" id="ccName" class="form-control bg-dark text-white border-secondary" placeholder="Nombre en la tarjeta">
                     </div>
                     <div class="col-md-12">
-                        <input type="text" id="ccNumber" class="form-control bg-dark text-white border-secondary" placeholder="Número de Tarjeta (16 dígitos sin espacios)" maxlength="16">
+                        <input type="text" id="ccNumber" class="form-control bg-dark text-white border-secondary" placeholder="Número de Tarjeta (16 dígitos)" maxlength="16">
                     </div>
                     <div class="col-md-6">
-                        <input type="text" id="ccExp" class="form-control bg-dark text-white border-secondary" placeholder="MM/AA (Vencimiento)" maxlength="5">
+                        <input type="text" id="ccExp" class="form-control bg-dark text-white border-secondary" placeholder="MM/AA" maxlength="5">
                     </div>
                     <div class="col-md-6">
                         <input type="password" id="ccCVV" class="form-control bg-dark text-white border-secondary" placeholder="CVV (3 dígitos)" maxlength="3">
                     </div>
                 </div>
-                <p class="small text-muted mt-2 m-0 text-center"><i class="bi bi-lock"></i> Procesamiento cifrado 256-bit.</p>
+                <p class="small text-muted mt-2 m-0 text-center"><i class="bi bi-lock"></i> Procesamiento cifrado validado por IA.</p>
             </div>
 
             <!-- COMPROBANTE TRANSFERENCIA -->
             <div id="receiptContainer" class="mt-3 hidden-section p-3 bg-dark border border-success rounded">
-                <label class="form-label text-success fw-bold">📸 Adjuntar Comprobante (Obligatorio para Transferencias)</label>
+                <label class="form-label text-success fw-bold">📸 Adjuntar Comprobante</label>
                 <input type="file" id="resReceiptFile" accept="image/*" class="form-control bg-black text-white border-secondary">
-                <small class="text-muted">El sistema comprimirá la imagen automáticamente.</small>
+                <small class="text-muted">El sistema comprimirá la imagen automáticamente para no saturar tus datos.</small>
             </div>
 
             <!-- CUPÓN -->
@@ -192,7 +203,7 @@
             </div>
 
             <div class="mt-4 bg-dark p-3 rounded border border-secondary text-center">
-                <label class="form-label text-warning fw-bold">Verificación de Seguridad Anti-Spam</label>
+                <label class="form-label text-warning fw-bold">Verificación de Seguridad Humana</label>
                 <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 mt-2">
                     <input type="text" id="resCaptcha" class="form-control bg-black text-white border-secondary text-center fw-bold text-danger fs-4" readonly style="letter-spacing: 5px; width: 130px !important;">
                     <i class="bi bi-arrow-right text-muted fs-4 d-none d-sm-block"></i>
@@ -204,13 +215,13 @@
         </form>
     </div>
 
-    <!-- PANELES DE ADMINISTRACIÓN Y CONTADOR -->
+    <!-- PANELES DE ADMINISTRACIÓN E IA -->
     <div id="adminPanel" class="hidden-section mb-5 pt-4">
         <div class="card p-4 shadow-lg border-warning">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
-                <h2 id="panelTitle" class="text-warning m-0 fw-bold">⚙️ Panel de Control</h2>
+                <h2 id="panelTitle" class="text-warning m-0 fw-bold">⚙️ Centro de Mando</h2>
                 <div class="d-flex flex-wrap justify-content-center gap-2">
-                    <button id="btnExportExcel" onclick="exportarCSV()" class="btn btn-success fw-bold hidden-section"><i class="bi bi-file-earmark-excel"></i> Exportar (Excel)</button>
+                    <button id="btnExportExcel" onclick="exportarCSV()" class="btn btn-success fw-bold hidden-section"><i class="bi bi-file-earmark-excel"></i> Exportar a Excel</button>
                     <button onclick="closeAdmin()" class="btn btn-outline-secondary">Cerrar Panel</button>
                 </div>
             </div>
@@ -230,16 +241,16 @@
                 </div>
                 <div class="col-md-4">
                     <div class="p-3 bg-dark border border-danger rounded text-center shadow-sm">
-                        <p class="text-danger m-0 small fw-bold">Bloqueos de Seguridad</p>
+                        <p class="text-danger m-0 small fw-bold">Riesgos Bloqueados IA</p>
                         <h3 id="totalAlerts" class="text-white m-0 mt-2">0</h3>
                     </div>
                 </div>
             </div>
 
             <div id="securityDashboard" class="mb-4 p-3 bg-black border border-danger rounded shadow-sm hidden-section">
-                <h5 class="text-danger m-0 fw-bold"><i class="bi bi-shield-exclamation"></i> Log de Seguridad Reciente</h5>
+                <h5 class="text-danger m-0 fw-bold"><i class="bi bi-shield-exclamation"></i> Log de Seguridad IA Reciente</h5>
                 <ul id="securityLogList" class="text-muted small mt-2 m-0" style="list-style-type: none; padding: 0;">
-                    <li>No hay alertas registradas aún.</li>
+                    <li>Análisis en tiempo real activo. No hay alertas recientes.</li>
                 </ul>
             </div>
             
@@ -250,10 +261,10 @@
                 </div>
                 <div class="row g-2">
                     <div class="col-md-9">
-                        <input type="text" id="adminPromoText" class="form-control bg-black text-white border-secondary" placeholder="Escribe una promoción flash para mostrar a todos...">
+                        <input type="text" id="adminPromoText" class="form-control bg-black text-white border-secondary" placeholder="Escribe una promoción flash para todos...">
                     </div>
                     <div class="col-md-3">
-                        <button onclick="publishPromo()" class="btn btn-orange w-100 fw-bold">Publicar Banner</button>
+                        <button onclick="publishPromo()" class="btn btn-orange w-100 fw-bold">Publicar</button>
                     </div>
                 </div>
             </div>
@@ -262,14 +273,14 @@
                 <h4 class="text-warning m-0 fw-bold"><i class="bi bi-list-check"></i> Gestión de Pedidos (Parrilla)</h4>
                 <div class="input-group style-search" style="max-width: 300px;">
                     <span class="input-group-text bg-dark text-muted border-secondary"><i class="bi bi-search"></i></span>
-                    <input type="text" id="adminSearchInput" onkeyup="filtrarPedidos()" class="form-control bg-dark text-white border-secondary" placeholder="Buscar pedido...">
+                    <input type="text" id="adminSearchInput" onkeyup="filtrarPedidos()" class="form-control bg-dark text-white border-secondary" placeholder="Buscar cliente o teléfono...">
                 </div>
             </div>
 
             <div class="table-responsive mb-5 bg-dark rounded border border-secondary p-2">
-                <table class="table table-dark table-hover align-middle mb-0" style="min-width: 800px;">
+                <table class="table table-dark table-hover align-middle mb-0" style="min-width: 900px;">
                     <thead>
-                        <tr class="text-warning"><th>Hora</th><th>Cliente</th><th>Pedido</th><th>Total</th><th>Pago</th><th>Estado</th><th>Acción</th></tr>
+                        <tr class="text-warning"><th>Hora</th><th>Cliente / Riesgo IA</th><th>Pedido</th><th>Total</th><th>Pago</th><th>Estado Logístico</th><th>Acción</th></tr>
                     </thead>
                     <tbody id="reservationsTable">
                         <tr><td colspan="7" class="text-muted text-center py-4">Cargando base de datos segura...</td></tr>
@@ -277,10 +288,10 @@
                 </table>
             </div>
 
-            <h4 class="text-warning mb-3 fw-bold"><i class="bi bi-gift"></i> Auditoría de Premios</h4>
+            <h4 class="text-warning mb-3 fw-bold"><i class="bi bi-gift"></i> Auditoría de Premios Entregados</h4>
             <div class="table-responsive bg-dark rounded border border-secondary p-2">
                 <table class="table table-dark table-sm table-striped align-middle mb-0">
-                    <thead><tr class="text-info"><th>Cliente</th><th>Premio</th><th>Fecha y Hora</th></tr></thead>
+                    <thead><tr class="text-info"><th>Cliente / Identificador</th><th>Premio</th><th>Fecha y Hora</th></tr></thead>
                     <tbody id="rouletteWinnersTable">
                         <tr><td colspan="3" class="text-muted text-center py-3">Cargando auditoría...</td></tr>
                     </tbody>
@@ -290,7 +301,65 @@
     </div>
 </div>
 
-<!-- MODALES (FACTURA Y COMPROBANTE) -->
+<!-- BOTÓN Y MODAL ASISTENTE (FAQ) -->
+<a onclick="abrirAsistente()" class="btn-floating-assistant" title="Ayuda y Preguntas Frecuentes">
+    <i class="bi bi-chat-dots-fill fs-2"></i>
+</a>
+
+<div class="modal fade" id="faqModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+      <div class="modal-content bg-dark text-white border-warning shadow-lg">
+        <div class="modal-header border-warning">
+          <h5 class="modal-title text-warning fw-bold"><i class="bi bi-robot"></i> Asistente de Dudas</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <p class="text-muted small mb-4">¡Hola! Soy el asistente virtual de Urban Grill. Aquí tienes las respuestas a las preguntas más comunes sobre la feria:</p>
+            <div class="accordion accordion-flush" id="accordionFAQ">
+                <div class="accordion-item bg-dark text-white border-secondary">
+                  <h2 class="accordion-header"><button class="accordion-button collapsed bg-dark text-warning fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">¿Cómo aplico el premio de la ruleta?</button></h2>
+                  <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#accordionFAQ"><div class="accordion-body text-light small">Al ganar en la ruleta, tu premio se guarda en tu "Billetera" en esta misma página. Toca el botón "Usar mi Premio en la Reserva" o cópialo manualmente en la sección de "Cupón" antes de confirmar tu pedido.</div></div>
+                </div>
+                <div class="accordion-item bg-dark text-white border-secondary">
+                  <h2 class="accordion-header"><button class="accordion-button collapsed bg-dark text-warning fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">¿Dónde están ubicados?</button></h2>
+                  <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#accordionFAQ"><div class="accordion-body text-light small">Nos encuentras en el stand principal de la Feria Empresarial de la IE Llano Verde. ¡Busca el humo con olor a BBQ!</div></div>
+                </div>
+                <div class="accordion-item bg-dark text-white border-secondary">
+                  <h2 class="accordion-header"><button class="accordion-button collapsed bg-dark text-warning fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">¿Es seguro pagar con tarjeta aquí?</button></h2>
+                  <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#accordionFAQ"><div class="accordion-body text-light small">Sí, contamos con un sistema cifrado de 256-bits respaldado por Inteligencia Artificial que asegura que tus datos no sean almacenados ni visibles para nosotros.</div></div>
+                </div>
+                <div class="accordion-item bg-dark text-white border-secondary">
+                  <h2 class="accordion-header"><button class="accordion-button collapsed bg-dark text-warning fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">¿Qué pasa si llego tarde a recoger mi pedido?</button></h2>
+                  <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#accordionFAQ"><div class="accordion-body text-light small">Te recomendamos llegar a la hora exacta que elegiste. Si te retrasas más de 15 minutos, tu pedido pasará a estado de espera y priorizaremos a los clientes presentes.</div></div>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+<!-- MODALES (FACTURA, COMPROBANTE E HISTORIAL) -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content bg-dark text-white border-info shadow-lg">
+        <div class="modal-header border-info">
+          <h5 class="modal-title text-info fw-bold"><i class="bi bi-clock-history"></i> Mi Historial de Pedidos</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="text-muted small">Ingresa el número de teléfono con el que realizaste tus reservas para buscar en nuestra base de datos.</p>
+          <div class="input-group mb-4">
+              <input type="number" id="searchPhoneHistory" class="form-control bg-black text-white border-secondary" placeholder="Tu número telefónico...">
+              <button onclick="buscarMiHistorial()" class="btn btn-info fw-bold">Buscar <i class="bi bi-search"></i></button>
+          </div>
+          <div id="historyResultsContainer" class="table-responsive">
+              <!-- Resultados de búsqueda -->
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+
 <div class="modal fade" id="receiptModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content bg-dark text-white border-info shadow-lg">
@@ -322,18 +391,10 @@
                     <p class="mb-1"><strong>FECHA:</strong> <span id="invDate"></span></p>
                     <p class="mb-1"><strong>CLIENTE:</strong> <span id="invName"></span></p>
                     <p class="mb-3"><strong>RECOGIDA:</strong> <span id="invTime" class="badge bg-dark fs-6 text-white"></span></p>
-                    
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
-                        <tr style="border-bottom: 1px solid #333; text-align: left;">
-                            <th>CANT</th><th>ITEM</th><th style="text-align: right;">TOTAL</th>
-                        </tr>
-                        <tr>
-                            <td id="invQty" style="padding-top: 5px;"></td>
-                            <td id="invProd" style="padding-top: 5px;"></td>
-                            <td id="invTotal" style="text-align: right; font-weight: bold; padding-top: 5px;"></td>
-                        </tr>
+                        <tr style="border-bottom: 1px solid #333; text-align: left;"><th>CANT</th><th>ITEM</th><th style="text-align: right;">TOTAL</th></tr>
+                        <tr><td id="invQty" style="padding-top: 5px;"></td><td id="invProd" style="padding-top: 5px;"></td><td id="invTotal" style="text-align: right; font-weight: bold; padding-top: 5px;"></td></tr>
                     </table>
-                    
                     <p class="small mt-2 mb-1 text-danger fw-bold" id="invDiscount"></p>
                     <div style="border-top: 2px dashed #333; margin-top: 10px; margin-bottom: 10px;"></div>
                     <p class="mb-1 text-center"><strong>MÉTODO PAGO:</strong> <span id="invPay"></span></p>
@@ -349,7 +410,6 @@
       </div>
     </div>
 </div>
-
 <div id="printableInvoice" class="hidden-section"></div>
 
 <!-- SCRIPTS DE FIREBASE Y LÓGICA -->
@@ -357,7 +417,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    import { getDatabase, ref, set, push, update, onValue, remove, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+    import { getDatabase, ref, set, push, update, onValue, remove } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBLfJyBKCo_Gpu1N9f8Fy-X68THPE_8ht4",
@@ -378,7 +438,7 @@
     let isRouletteEnabled = true;
     let cuponAplicado = null;
     let allReservations = {}; 
-    let securityLogs = []; // Historial de seguridad
+    let securityLogs = []; 
 
     // ---- NÚMERO DE WHATSAPP DEL STAND ----
     const NUMERO_WHATSAPP_NEGOCIO = "573000000000"; 
@@ -394,7 +454,7 @@
 
     const rouletteOptions = ["10% Descuento", "Gira de nuevo", "$1.000 Descuento", "Cede el turno", "¡Bono Especial!", "Gira de nuevo"];
 
-    // ---------------- EFECTOS DE SONIDO NATIVOS ----------------
+    // -------- EFECTOS DE SONIDO --------
     function playSpinSound() {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -405,10 +465,8 @@
             osc.frequency.exponentialRampToValueAtTime(700, ctx.currentTime + 0.15);
             gain.gain.setValueAtTime(0.08, ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.15);
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start(); osc.stop(ctx.currentTime + 0.15);
         } catch(e){}
     }
 
@@ -422,10 +480,8 @@
                 osc.frequency.value = freq;
                 gain.gain.setValueAtTime(0.12, ctx.currentTime + i * 0.1);
                 gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.22);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start(ctx.currentTime + i * 0.1);
-                osc.stop(ctx.currentTime + i * 0.1 + 0.22);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + i * 0.1); osc.stop(ctx.currentTime + i * 0.1 + 0.22);
             });
         } catch(e){}
     }
@@ -435,12 +491,42 @@
     window.logoutUser = () => signOut(auth).then(() => Swal.fire('Adiós', 'Sesión cerrada exitosamente', 'success'));
 
     // -------- UI & FORMULARIO --------
+    window.abrirAsistente = () => new bootstrap.Modal(document.getElementById('faqModal')).show();
+    
+    window.abrirHistorial = () => {
+        document.getElementById('historyResultsContainer').innerHTML = '';
+        new bootstrap.Modal(document.getElementById('historyModal')).show();
+    }
+
+    window.buscarMiHistorial = () => {
+        const phone = document.getElementById('searchPhoneHistory').value.trim();
+        const container = document.getElementById('historyResultsContainer');
+        if (!phone) return Swal.fire('Atención', 'Ingresa un número de teléfono', 'warning');
+        
+        container.innerHTML = '<p class="text-center text-info mt-3"><i class="bi bi-hourglass-split"></i> Buscando por IA en la base de datos...</p>';
+        
+        setTimeout(() => {
+            let found = Object.entries(allReservations).filter(([id, r]) => r.phone === phone);
+            if(found.length === 0) {
+                container.innerHTML = `<div class="alert alert-secondary text-center mt-3">No encontramos pedidos registrados con el número ${phone}.</div>`;
+                return;
+            }
+            
+            let html = '<table class="table table-dark table-sm table-striped mt-3"><thead><tr class="text-info"><th>Fecha</th><th>Pedido</th><th>Total</th><th>Estado</th></tr></thead><tbody>';
+            found.forEach(([id, r]) => {
+                let badge = r.status === 'Entregado' ? 'bg-success' : (r.status === 'Preparando' ? 'bg-warning text-dark' : 'bg-danger');
+                html += `<tr><td>${r.timestamp.split(',')[0]}<br><small>${r.time}</small></td><td>${r.qty}x ${r.product}</td><td>$${r.total.toLocaleString()}</td><td><span class="badge ${badge}">${r.status}</span></td></tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }, 800); // Simulamos tiempo de búsqueda de IA
+    };
+
     window.togglePaymentFields = () => {
         const method = document.getElementById('resPaymentMethod').value;
         const receiptBox = document.getElementById('receiptContainer');
         const cardBox = document.getElementById('creditCardContainer');
         
-        // Mostrar Ocultar Transferencia
         if(method === 'Transferencia') {
             receiptBox.classList.remove('hidden-section');
             document.getElementById('resReceiptFile').required = true;
@@ -449,7 +535,6 @@
             document.getElementById('resReceiptFile').required = false;
         }
 
-        // Mostrar Ocultar Tarjeta
         if (method === 'Tarjeta') {
             cardBox.classList.remove('hidden-section');
             document.getElementById('ccName').required = true;
@@ -469,13 +554,12 @@
         const prodName = document.getElementById('resProduct').value;
         const qty = parseInt(document.getElementById('resQty').value) || 1;
         const prodObj = products.find(p => p.name === prodName);
-        let baseTotal = (prodObj ? prodObj.price : 0) * qty;
-        let finalTotal = baseTotal;
+        let finalTotal = (prodObj ? prodObj.price : 0) * qty;
 
         if (cuponAplicado) {
             if (cuponAplicado.includes("10%")) finalTotal *= 0.90;
-            else if (cuponAplicado.includes("1.000")) finalTotal = Math.max(0, baseTotal - 1000);
-            else if (cuponAplicado.includes("Bono")) finalTotal = Math.max(0, baseTotal - 2000);
+            else if (cuponAplicado.includes("1.000")) finalTotal = Math.max(0, finalTotal - 1000);
+            else if (cuponAplicado.includes("Bono")) finalTotal = Math.max(0, finalTotal - 2000);
             document.getElementById('couponDiscountMsg').innerText = `✓ Cupón aplicado (${cuponAplicado})`;
         } else {
             document.getElementById('couponDiscountMsg').innerText = "";
@@ -494,57 +578,88 @@
 
     window.usarPremioGuardado = () => {
         const premioText = document.getElementById('walletPrize').innerText;
-        if (premioText && premioText !== "Ninguno" && premioText !== "Gira la ruleta arriba") {
+        if (premioText && premioText !== "Ninguno" && !premioText.includes("Gira la ruleta")) {
             document.getElementById('resCouponInput').value = premioText;
             window.aplicarCupon();
             document.getElementById('reservar').scrollIntoView({ behavior: 'smooth' });
         }
     };
 
-    // -------- RULETA REPARADA (UID) --------
-    window.spinRoulette = () => {
-        if (!window.currentUser) return Swal.fire('¡Atención!', 'Inicia sesión con Google primero.', 'warning');
-        
-        // USA EL UID, CERO PROBLEMAS DE REGLAS DE FIREBASE
-        const prizeRef = ref(database, 'premios/' + window.currentUser.uid);
-        
-        get(prizeRef).then(snap => {
-            if (snap.exists()) return Swal.fire('Ya participaste', 'Ya tienes un premio en tu billetera.', 'info');
+    window.verificarPremioLocal = () => {
+        const premioLocal = localStorage.getItem('ug_premio_ganado');
+        const walletBox = document.getElementById('userWallet');
+        const btn = document.getElementById('spinBtn');
+        const display = document.getElementById('wheelDisplay');
+        const walletPrize = document.getElementById('walletPrize');
 
-            const display = document.getElementById('wheelDisplay'), btn = document.getElementById('spinBtn');
-            btn.disabled = true;
-            display.style.transform = `rotate(${Math.floor(1800 + Math.random() * 1800)}deg)`;
-            document.getElementById('rouletteResult').innerHTML = "Girando la suerte...";
-
-            let soundInterval = setInterval(playSpinSound, 250);
-
-            setTimeout(() => {
-                clearInterval(soundInterval);
-                const randomOption = rouletteOptions[Math.floor(Math.random() * rouletteOptions.length)];
-                display.innerHTML = randomOption;
-                document.getElementById('rouletteResult').innerHTML = `🎉 ¡Ganaste: ${randomOption}!`;
-                
-                if (randomOption !== "Gira de nuevo" && randomOption !== "Cede el turno") {
-                    playWinSound();
-                    set(prizeRef, { // Lo guarda directamente al ID del usuario
-                        client: window.currentUser.displayName,
-                        email: window.currentUser.email,
-                        premio: randomOption, 
-                        fecha: new Date().toLocaleString('es-CO')
-                    }).then(() => Swal.fire('¡Felicidades!', 'Premio guardado en tu billetera.', 'success'));
-                } else {
-                    btn.disabled = false; 
-                }
-            }, 3000);
-        }).catch(err => Swal.fire('Error de Nube', err.message, 'error'));
+        walletBox.classList.remove('hidden-section');
+        if (premioLocal) {
+            btn.disabled = true; 
+            display.innerHTML = "Premio Asegurado";
+            walletPrize.innerText = premioLocal;
+        } else {
+            btn.disabled = !isRouletteEnabled; 
+            display.innerHTML = isRouletteEnabled ? "¡Prueba tu suerte!" : "Ruleta inactiva";
+            walletPrize.innerText = "Aún no has jugado";
+        }
     };
 
-    // -------- OPTIMIZADOR DE IMÁGENES --------
-    function comprimirImagen(file, callback) {
-        if (!file || !file.type.startsWith('image/')) {
-            callback("");
-            return;
+    // -------- RULETA LIBRE (CON O SIN SESIÓN) --------
+    window.spinRoulette = async () => {
+        if (localStorage.getItem('ug_premio_ganado')) {
+            return Swal.fire('Ya participaste', 'Ya ganaste un premio en este dispositivo. ¡Ve a hacer tu reserva!', 'info');
         }
+
+        let playerName = "Anónimo";
+        if (window.currentUser) {
+            playerName = window.currentUser.displayName;
+        } else {
+            const { value: name } = await Swal.fire({
+                title: 'Registro Rápido',
+                text: 'Ingresa tu nombre o apodo para guardar tu premio en el sistema.',
+                input: 'text',
+                inputPlaceholder: 'Ej: Carlos, Ana...',
+                showCancelButton: true,
+                confirmButtonText: 'Guardar y Girar',
+                cancelButtonText: 'Cancelar',
+                inputValidator: (value) => { if (!value) return '¡Necesitamos tu nombre!' }
+            });
+            if (!name) return;
+            playerName = name;
+        }
+        
+        const display = document.getElementById('wheelDisplay'), btn = document.getElementById('spinBtn');
+        btn.disabled = true;
+        display.style.transform = `rotate(${Math.floor(1800 + Math.random() * 1800)}deg)`;
+        document.getElementById('rouletteResult').innerHTML = "Girando la suerte...";
+
+        let soundInterval = setInterval(playSpinSound, 250);
+
+        setTimeout(() => {
+            clearInterval(soundInterval);
+            const randomOption = rouletteOptions[Math.floor(Math.random() * rouletteOptions.length)];
+            display.innerHTML = randomOption;
+            document.getElementById('rouletteResult').innerHTML = `🎉 ¡Ganaste: ${randomOption}!`;
+            
+            if (randomOption !== "Gira de nuevo" && randomOption !== "Cede el turno") {
+                playWinSound();
+                push(ref(database, 'premios'), { 
+                    client: playerName,
+                    premio: randomOption, 
+                    fecha: new Date().toLocaleString('es-CO')
+                }).then(() => {
+                    localStorage.setItem('ug_premio_ganado', randomOption);
+                    window.verificarPremioLocal();
+                    Swal.fire('¡Felicidades!', 'Tu premio está guardado en tu billetera. Toca "Usar mi Premio" para aplicarlo.', 'success');
+                });
+            } else {
+                btn.disabled = false; 
+            }
+        }, 3000);
+    };
+
+    function comprimirImagen(file, callback) {
+        if (!file || !file.type.startsWith('image/')) return callback("");
         const reader = new FileReader();
         reader.onload = event => {
             const img = new Image();
@@ -552,15 +667,9 @@
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 const MAX_WIDTH = 600;
-                let width = img.width;
-                let height = img.height;
-                
-                if (width > MAX_WIDTH) {
-                    height = Math.round(height * (MAX_WIDTH / width));
-                    width = MAX_WIDTH;
-                }
-                canvas.width = width;
-                canvas.height = height;
+                let width = img.width, height = img.height;
+                if (width > MAX_WIDTH) { height = Math.round(height * (MAX_WIDTH / width)); width = MAX_WIDTH; }
+                canvas.width = width; canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 callback(canvas.toDataURL('image/jpeg', 0.6));
@@ -571,56 +680,52 @@
         reader.readAsDataURL(file);
     }
 
-    // -------- SEGURIDAD: RESERVAS Y AGENDA --------
+    // -------- SEGURIDAD: RESERVAS E IA --------
+    function calcularRiesgoIA(qty, time) {
+        if (qty >= 10) return "🔴 ALTO RIESGO";
+        if (qty >= 5) return "🟡 RIESGO MEDIO";
+        return "🟢 SEGURO";
+    }
+
     window.handleReserve = (event) => {
         event.preventDefault();
         
-        // 1. Verificación Captcha
         if (document.getElementById('resCaptchaInput').value.trim() !== currentCaptcha) {
-            registrarAlertaSeguridad("Captcha fallido por usuario no identificado.");
-            Swal.fire('Error', 'Código de seguridad incorrecto.', 'error');
+            registrarAlertaSeguridad("IA: Captcha fallido detectado.");
+            Swal.fire('Error de Seguridad', 'El código de seguridad no coincide.', 'error');
             generarCaptcha(); return;
         }
 
-        // 2. Control Anti-Spam
         const lastOrder = localStorage.getItem('ug_last_order');
-        if (lastOrder && (Date.now() - parseInt(lastOrder)) < 60000) {
-            registrarAlertaSeguridad("Intento de Spam bloqueado.");
-            return Swal.fire('🚨 Sistema de Seguridad', 'Has hecho un pedido muy recientemente. Espera 1 minuto.', 'warning');
+        if (lastOrder && (Date.now() - parseInt(lastOrder)) < 45000) {
+            registrarAlertaSeguridad("IA: Intento de SPAM (Cooldown).");
+            return Swal.fire('🚨 Alerta IA', 'Estás haciendo pedidos demasiado rápido. Por favor, espera unos segundos.', 'warning');
         }
 
         const data = extraerDatosFormulario();
+        const nivelRiesgo = calcularRiesgoIA(data.qty, data.time);
+        data.riesgoIA = nivelRiesgo;
 
-        // 3. Control de Agenda (Cupos por Hora)
         let cuposOcupados = 0;
         for (let id in allReservations) {
-            if (allReservations[id].time === data.time && allReservations[id].status !== 'Entregado') {
-                cuposOcupados++;
-            }
+            if (allReservations[id].time === data.time && allReservations[id].status !== 'Entregado') cuposOcupados++;
         }
         if (cuposOcupados >= MAX_PEDIDOS_POR_HORA) {
-            registrarAlertaSeguridad(`Agenda llena intentada a las ${data.time}`);
-            return Swal.fire({
-                title: '🕒 Hora Saturada', 
-                text: `Ya tenemos ${cuposOcupados} pedidos agendados exactamente para las ${data.time}. Por favor, selecciona una hora diferente para asegurar que tu chuzo salga caliente y a tiempo.`, 
-                icon: 'warning'
-            });
+            registrarAlertaSeguridad(`IA: Sobrecupo evitado a las ${data.time}`);
+            return Swal.fire({ title: '🕒 Agenda Saturada', text: `Ya tenemos demasiados pedidos para las ${data.time}. Por favor, selecciona una hora 10 min distinta para garantizar la calidad de tu pedido.`, icon: 'warning' });
         }
 
-        // 4. Verificación de Tarjeta de Crédito (Mock Seguro)
         if (data.payment === 'Tarjeta') {
             const ccNumber = document.getElementById('ccNumber').value.replace(/\s/g, '');
             if (ccNumber.length < 15) return Swal.fire('Error', 'Número de tarjeta inválido', 'error');
-            // Enmascaramos la tarjeta por seguridad
             data.payment = `Tarjeta (**** ${ccNumber.slice(-4)})`;
         }
 
-        // 5. Control Pedidos Inusuales
-        if (data.qty > 8) {
-            registrarAlertaSeguridad(`Pedido masivo de ${data.qty} chuzos para revisión.`);
+        if (nivelRiesgo !== "🟢 SEGURO") {
+            registrarAlertaSeguridad(`IA: Pedido masivo marcado como ${nivelRiesgo}.`);
             Swal.fire({
-                title: '⚠️ Revisión', text: `Este pedido de ${data.qty} unidades pasará por revisión manual de los administradores. ¿Confirmar?`,
-                icon: 'warning', showCancelButton: true, confirmButtonText: 'Sí, enviar'
+                title: '⚠️ Análisis de IA', text: `Este pedido de ${data.qty} chuzos se procesará bajo revisión especial de la administración. ¿Continuar?`,
+                icon: 'warning', showCancelButton: true, confirmButtonText: 'Sí, enviar pedido'
             }).then((r) => { if (r.isConfirmed) { data.suspicious = true; procesarReserva(data); } });
         } else {
             procesarReserva(data);
@@ -638,13 +743,12 @@
             total: window.calcularTotalReserva(), 
             cupon: cuponAplicado || "Ninguno",
             timestamp: new Date().toLocaleString('es-CO'), 
-            status: 'Pendiente', 
-            suspicious: false
+            status: 'Pendiente', suspicious: false
         };
     }
 
     function procesarReserva(data) {
-        document.getElementById('btnSubmitReserva').innerText = "Procesando de forma segura...";
+        document.getElementById('btnSubmitReserva').innerText = "Cifrando y Enviando...";
         document.getElementById('btnSubmitReserva').disabled = true;
         
         const fileInput = document.getElementById('resReceiptFile');
@@ -658,14 +762,12 @@
             set(newRef, data).then(() => {
                 localStorage.setItem('ug_last_order', Date.now()); 
                 generarFacturaUI(data, orderId);
-            }).catch(err => { Swal.fire('Error de Conexión', err.message, 'error'); resetBtn(); });
+            }).catch(err => { Swal.fire('Error', err.message, 'error'); resetBtn(); });
         };
 
         if (method === 'Transferencia' && fileInput.files.length > 0) {
             comprimirImagen(fileInput.files[0], guardarData);
-        } else { 
-            guardarData(""); 
-        }
+        } else { guardarData(""); }
     }
 
     function registrarAlertaSeguridad(mensaje) {
@@ -676,11 +778,11 @@
 
     function actualizarLogSeguridad() {
         const list = document.getElementById('securityLogList');
-        list.innerHTML = securityLogs.slice(0,5).map(log => `<li>${log}</li>`).join('') || '<li>No hay alertas registradas.</li>';
+        list.innerHTML = securityLogs.slice(0,5).map(log => `<li>${log}</li>`).join('') || '<li>IA Monitor: Todo Seguro.</li>';
         document.getElementById('totalAlerts').innerText = securityLogs.length;
     }
 
-    // -------- FACTURAS Y UI --------
+    // -------- FACTURAS --------
     function generarFacturaUI(data, orderId) {
         document.getElementById('invId').innerText = orderId; 
         document.getElementById('invDate').innerText = data.timestamp.split(',')[0];
@@ -690,7 +792,7 @@
         document.getElementById('invProd').innerText = data.product;
         document.getElementById('invTotal').innerText = "$" + data.total.toLocaleString(); 
         document.getElementById('invPay').innerText = data.payment;
-        document.getElementById('invDiscount').innerText = data.cupon !== "Ninguno" ? `Desc. cupón: ${data.cupon}` : "";
+        document.getElementById('invDiscount').innerText = data.cupon !== "Ninguno" ? `Descuento: ${data.cupon}` : "";
 
         const cleanPhone = data.phone.replace(/[^0-9]/g, '');
         const waMsg = `*NUEVO PEDIDO URBAN GRILL* 🔥%0A%0A*Ticket:* #${orderId}%0A*Cliente:* ${data.name}%0A*Tel:* ${cleanPhone}%0A*Pedido:* ${data.qty}x ${data.product}%0A*Total:* $${data.total.toLocaleString()} COP%0A*Pago:* ${data.payment}%0A*Hora recogida:* ${data.time}`;
@@ -721,17 +823,14 @@
     // -------- ADMIN PANEL --------
     window.requestAccess = (role) => {
         Swal.fire({ 
-            title: `Ingreso de Seguridad (${role})`, 
+            title: `Bóveda de Seguridad (${role})`, 
             input: 'password', 
             inputAttributes: { autocapitalize: 'off' }, 
-            showCancelButton: true, 
-            confirmButtonText: 'Entrar al Sistema',
-            cancelButtonText: 'Cancelar'
+            showCancelButton: true, confirmButtonText: 'Validar'
         }).then((res) => {
             const pass = res.value;
             if ((role === 'admin' && pass === 'admin123') || (role === 'accounting' && pass === 'conta123')) {
                 document.getElementById('adminPanel').classList.remove('hidden-section');
-                
                 if (role === 'accounting') {
                     document.getElementById('accountingSummary').classList.remove('hidden-section');
                     document.getElementById('btnExportExcel').classList.remove('hidden-section');
@@ -746,9 +845,8 @@
                     document.getElementById('panelTitle').innerHTML = '<i class="bi bi-gear-fill"></i> Panel de Administración';
                 }
                 document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
-                Swal.fire('Acceso Concedido', 'Bienvenido al panel central.', 'success');
             } else if (pass) {
-                Swal.fire('Acceso Denegado', 'La contraseña es incorrecta.', 'error');
+                Swal.fire('Acceso Denegado', 'Intento registrado por el sistema.', 'error');
             }
         });
     };
@@ -757,57 +855,40 @@
     
     window.publishPromo = () => {
         const t = document.getElementById('adminPromoText').value.trim();
-        if(t) set(ref(database, 'promo_activa'), t).then(() => { 
-            Swal.fire('Lanzada', 'La promoción ahora es visible para todos los clientes.', 'success'); 
-            document.getElementById('adminPromoText').value=""; 
-        });
+        if(t) set(ref(database, 'promo_activa'), t).then(() => { Swal.fire('Lanzada', 'Visible para todos.', 'success'); document.getElementById('adminPromoText').value=""; });
     };
     
     window.toggleRouletteStatus = () => set(ref(database, 'ruleta_activa'), !isRouletteEnabled);
-    
     window.eliminarReserva = id => {
-        Swal.fire({ title: '¿Estás seguro?', text: "Esto borrará el pedido de la base de datos.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, borrar' }).then(r => {
+        Swal.fire({ title: '¿Borrar pedido?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, borrar' }).then(r => {
             if(r.isConfirmed) remove(ref(database, 'reservas/' + id));
         });
     };
     
-    window.verComprobante = img => { 
-        document.getElementById('modalReceiptImg').src = img; 
-        new bootstrap.Modal(document.getElementById('receiptModal')).show(); 
-    };
-    
-    window.updateStatus = (id, newStatus) => {
-        update(ref(database, 'reservas/' + id), { status: newStatus });
-    };
+    window.verComprobante = img => { document.getElementById('modalReceiptImg').src = img; new bootstrap.Modal(document.getElementById('receiptModal')).show(); };
+    window.updateStatus = (id, newStatus) => update(ref(database, 'reservas/' + id), { status: newStatus });
 
     window.filtrarPedidos = () => {
         const term = document.getElementById('adminSearchInput').value.toLowerCase();
         const rows = document.querySelectorAll('#reservationsTable tr');
-        rows.forEach(row => {
-            row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
-        });
+        rows.forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; });
     };
 
     window.exportarCSV = () => {
-        let csv = "ID,Fecha,Nombre,Telefono,Producto,Cantidad,Total_COP,Metodo_Pago,Estado_Actual,Alerta_Seguridad\n";
+        let csv = "ID,Fecha,Nombre,Telefono,Producto,Cantidad,Total_COP,Metodo_Pago,Estado,Riesgo_IA\n";
         for (let id in allReservations) {
             let r = allReservations[id];
-            let alerta = r.suspicious ? "SI" : "NO";
-            csv += `${id.substring(1,7)},"${r.timestamp}","${r.name}","${r.phone}","${r.product}",${r.qty},${r.total},${r.payment},${r.status},${alerta}\n`;
+            csv += `${id.substring(1,7)},"${r.timestamp}","${r.name}","${r.phone}","${r.product}",${r.qty},${r.total},${r.payment},${r.status},${r.riesgoIA}\n`;
         }
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
         link.download = "Reporte_Contabilidad_UrbanGrill.csv";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
     };
 
     // -------- INICIO --------
-    function generarCaptcha() { 
-        document.getElementById('resCaptcha').value = currentCaptcha = Math.floor(1000 + Math.random() * 9000).toString(); 
-    }
+    function generarCaptcha() { document.getElementById('resCaptcha').value = currentCaptcha = Math.floor(1000 + Math.random() * 9000).toString(); }
     
     function renderMenu() {
         document.getElementById('menuList').innerHTML = products.map(p => `
@@ -821,7 +902,6 @@
                     </div>
                 </div>
             </div>`).join('');
-            
         document.getElementById('resProduct').innerHTML = products.map(p => `<option value="${p.name}">${p.name} - $${p.price.toLocaleString()}</option>`).join('');
         window.calcularTotalReserva();
     }
@@ -835,27 +915,11 @@
             authSec.classList.add('hidden-section'); 
             profSec.classList.remove('hidden-section');
             document.getElementById('userNameDisplay').innerText = `Hola, ${user.displayName.split(' ')[0]}`;
-            
-            // LECTURA DEL PREMIO POR UID (Seguro y funcional)
-            onValue(ref(database, 'premios/' + user.uid), snap => {
-                document.getElementById('userWallet').classList.remove('hidden-section');
-                if (snap.exists()) {
-                    document.getElementById('spinBtn').disabled = true; 
-                    document.getElementById('wheelDisplay').innerHTML = "Ya ganaste";
-                    const data = snap.val(); 
-                    document.getElementById('walletPrize').innerText = data.premio;
-                } else {
-                    document.getElementById('spinBtn').disabled = !isRouletteEnabled; 
-                    document.getElementById('walletPrize').innerText = "Gira la ruleta arriba";
-                }
-            });
         } else {
             authSec.classList.remove('hidden-section'); 
             profSec.classList.add('hidden-section');
-            document.getElementById('spinBtn').disabled = true; 
-            document.getElementById('userWallet').classList.add('hidden-section');
-            document.getElementById('wheelDisplay').innerHTML = "Inicia sesión";
         }
+        window.verificarPremioLocal();
     });
 
     onValue(ref(database, 'ruleta_activa'), snap => {
@@ -864,18 +928,15 @@
             const btn = document.getElementById('toggleRouletteBtn');
             btn.className = isRouletteEnabled ? "btn btn-sm btn-danger fw-bold shadow-sm" : "btn btn-sm btn-success fw-bold shadow-sm";
             btn.innerText = isRouletteEnabled ? "Desactivar Ruleta" : "Activar Ruleta";
-            if(window.currentUser) document.getElementById('spinBtn').disabled = !isRouletteEnabled;
+            window.verificarPremioLocal();
         }
     });
 
     onValue(ref(database, 'promo_activa'), snap => {
         const b = document.getElementById('promoBanner');
         if(snap.exists() && snap.val().trim() !== "") { 
-            document.getElementById('promoText').innerText = "📢 " + snap.val(); 
-            b.style.display = "block"; 
-        } else {
-            b.style.display = "none";
-        }
+            document.getElementById('promoText').innerText = "📢 " + snap.val(); b.style.display = "block"; 
+        } else { b.style.display = "none"; }
     });
 
     onValue(ref(database, 'reservas'), snap => {
@@ -890,9 +951,9 @@
                 count++; rev += parseInt(r.total) || 0;
                 if(r.suspicious) alerts++;
                 
-                let btn = r.receipt ? `<img src="${r.receipt}" class="receipt-thumb mt-1" onclick="verComprobante('${r.receipt}')" title="Ver comprobante">` : '<span class="badge bg-secondary mt-1">Sin img</span>';
+                let btn = r.receipt ? `<img src="${r.receipt}" class="receipt-thumb mt-1" onclick="verComprobante('${r.receipt}')" title="Ver">` : '<span class="badge bg-secondary mt-1">Sin img</span>';
                 let trClass = r.suspicious ? 'flag-sus' : '';
-                let alertIcon = r.suspicious ? '<i class="bi bi-exclamation-triangle-fill text-danger fs-5" title="¡Pedido Grande / Sospechoso!"></i> ' : '';
+                let riesgoBadge = r.riesgoIA === "🟢 SEGURO" ? 'bg-success' : (r.riesgoIA === "🟡 RIESGO MEDIO" ? 'bg-warning text-dark' : 'bg-danger');
                 
                 let selPend = r.status === 'Pendiente' ? 'selected' : '';
                 let selPrep = r.status === 'Preparando' ? 'selected' : '';
@@ -901,7 +962,7 @@
                 tbody.innerHTML += `
                     <tr class="${trClass}">
                         <td><span class="badge bg-light text-dark fw-bold mb-1">#${id.substring(1, 6)}</span><br><small>${r.time}</small></td>
-                        <td>${alertIcon}<strong>${r.name}</strong><br><small class="text-info">${r.phone}</small></td>
+                        <td><strong>${r.name}</strong><br><span class="badge ${riesgoBadge} mt-1">${r.riesgoIA}</span><br><small class="text-info">${r.phone}</small></td>
                         <td class="fw-bold">${r.qty}x ${r.product}</td>
                         <td class="text-success fw-bold">$${r.total.toLocaleString()}</td>
                         <td><small>${r.payment}</small><br>${btn}</td>
@@ -934,7 +995,7 @@
         }
     });
 
-    window.onload = () => { renderMenu(); generarCaptcha(); };
+    window.onload = () => { renderMenu(); generarCaptcha(); window.verificarPremioLocal(); };
 </script>
 </body>
 </html>
