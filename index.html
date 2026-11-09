@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Urban Grill - Temporalmente nos encontramos en mantenimiento del servicio</title>
+    <title>Urban Grill - Sistema Oficial</title>
     
     <link rel="icon" href="data:,">
     <!-- Bootstrap CSS -->
@@ -23,7 +23,7 @@
         .hidden-section { display: none !important; }
         
         /* Botones Mejorados */
-        .btn-instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: white; border: none; border-radius: 20px; font-weight: bold; padding: 6px 15px; }
+        .btn-instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: white; border: none; border-radius: 20px; font-weight: bold; padding: 6px 15px; text-decoration: none;}
         .btn-instagram:hover { color: white; opacity: 0.9; transform: scale(1.05); transition: 0.3s; }
         .btn-google { background-color: #ffffff; color: #333; border: none; border-radius: 20px; font-weight: bold; padding: 6px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; }
         .btn-google:hover { background-color: #f1f1f1; transform: scale(1.05); transition: 0.3s; }
@@ -37,13 +37,23 @@
         .receipt-thumb:hover { transform: scale(1.2); }
 
         /* Estilos para estado de pedidos */
-        .status-select { background: #333; color: white; border: 1px solid #555; border-radius: 5px; padding: 3px; font-size: 0.9rem; }
+        .status-select { background: #333; color: white; border: 1px solid #555; border-radius: 5px; padding: 4px; font-size: 0.9rem; font-weight: bold;}
+        .status-select:focus { outline: none; border-color: #ff6f00; }
         .flag-sus { border: 2px solid #dc3545 !important; background-color: rgba(220,53,69,0.1); }
 
+        /* ESTILOS PROFESIONALES DE IMPRESIÓN (TICKET TÉRMICO POS) */
         @media print {
             body * { visibility: hidden; }
             #printableInvoice, #printableInvoice * { visibility: visible; }
-            #printableInvoice { position: absolute; left: 0; top: 0; width: 100%; background: white; color: black; padding: 20px; font-family: monospace; }
+            body { margin: 0; padding: 0; background: white; }
+            #printableInvoice { 
+                position: absolute; left: 0; top: 0; 
+                width: 80mm; 
+                background: white; color: black; padding: 10px; 
+                font-family: 'Courier New', Courier, monospace; 
+                font-size: 12px;
+            }
+            .no-print { display: none !important; }
         }
     </style>
 </head>
@@ -51,7 +61,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow">
     <div class="container">
-        <a class="navbar-brand text-warning fw-bold fs-3" href="#">🔥servidor en mantenimiento</a>
+        <a class="navbar-brand text-warning fw-bold fs-3" href="#">🔥 Urban Grill</a>
         <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -86,7 +96,7 @@
     <div id="menu" class="pt-2 mb-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="text-warning fw-bold m-0"><i class="bi bi-fire"></i> Nuestro Menú</h2>
-            <span class="badge bg-danger fs-6 rounded-pill">Feria Empresarial</span>
+            <span class="badge bg-danger fs-6 rounded-pill shadow">Feria Empresarial</span>
         </div>
         <div class="row g-4" id="menuList"></div>
     </div>
@@ -97,13 +107,14 @@
         <p id="rouletteSubtext" class="text-muted small">Inicia sesión con Google para girar y ganar bonos para tu reserva.</p>
         
         <div id="wheelDisplay" class="roulette-wheel shadow">Inicia sesión</div>
-        <button id="spinBtn" onclick="spinRoulette()" class="btn btn-orange px-5 py-2 rounded-pill fs-5" disabled>¡Girar Ruleta!</button>
+        <button id="spinBtn" onclick="spinRoulette()" class="btn btn-orange px-5 py-2 rounded-pill fs-5 shadow" disabled>¡Girar Ruleta!</button>
         <p id="rouletteResult" class="mt-3 text-info fw-bold fs-5"></p>
         
         <div id="userWallet" class="mt-3 p-3 bg-black border border-warning rounded shadow hidden-section">
             <h5 class="text-warning fw-bold m-0"><i class="bi bi-ticket-perforated-fill"></i> Tu Premio Guardado:</h5>
-            <p id="walletPrize" class="text-white fs-4 fw-bold mt-2 mb-0">Ninguno</p>
-            <small id="walletAlertMsg" class="text-info d-block mt-1">Copia este código en la sección de reservas.</small>
+            <p id="walletPrize" class="text-white fs-4 fw-bold mt-2 mb-2">Ninguno</p>
+            <button onclick="usarPremioGuardado()" class="btn btn-outline-warning btn-sm rounded-pill fw-bold mb-2"><i class="bi bi-check2-circle"></i> Usar mi Premio en la Reserva</button>
+            <small id="walletAlertMsg" class="text-info d-block">Aplica directamente al momento de confirmar tu pedido.</small>
         </div>
     </div>
 
@@ -114,7 +125,7 @@
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label text-warning fw-bold">Nombre Completo</label>
-                    <input type="text" id="resName" class="form-control bg-dark text-white border-secondary" placeholder="Ej: Bolin..." required>
+                    <input type="text" id="resName" class="form-control bg-dark text-white border-secondary" placeholder="Ej: Tu Nombre" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label text-warning fw-bold">Teléfono / WhatsApp</label>
@@ -129,13 +140,13 @@
                     <input type="number" id="resQty" min="1" max="50" value="1" class="form-control bg-dark text-white border-secondary fw-bold text-center" onchange="calcularTotalReserva()" required>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label text-warning fw-bold">Hora de recogida</label>
+                    <label class="form-label text-warning fw-bold">Hora de recogida estimada</label>
                     <input type="time" id="resTime" class="form-control bg-dark text-white border-secondary" required>
                 </div>
                 <div class="col-md-12 mt-4">
                     <label class="form-label text-warning fw-bold">Método de Pago</label>
                     <select id="resPaymentMethod" class="form-select bg-dark text-white border-secondary" onchange="toggleReceiptField()" required>
-                        <option value="Efectivo">💵 Efectivo (Pago en el stand)</option>
+                        <option value="Efectivo">💵 Efectivo (Pago presencial en el stand)</option>
                         <option value="Transferencia">📱 Transferencia (Nequi/Daviplata)</option>
                     </select>
                 </div>
@@ -150,7 +161,7 @@
                         <button type="button" onclick="aplicarCupon()" class="btn btn-outline-warning fw-bold">Aplicar</button>
                     </div>
                 </div>
-                <div class="col-md-5 text-md-end">
+                <div class="col-md-5 text-start text-md-end">
                     <span class="text-muted d-block small">Total a Pagar:</span>
                     <span id="resTotalDisplay" class="fs-2 fw-bold text-success">$0 COP</span>
                     <span id="couponDiscountMsg" class="d-block small text-warning fw-bold"></span>
@@ -160,15 +171,15 @@
             <div id="receiptContainer" class="mt-3 hidden-section p-3 bg-dark border border-info rounded">
                 <label class="form-label text-info fw-bold">📸 Adjuntar Comprobante (Obligatorio)</label>
                 <input type="file" id="resReceiptFile" accept="image/*" class="form-control bg-black text-white border-secondary">
-                <small class="text-muted">Sube el pantallazo de tu transferencia para verificar el pago.</small>
+                <small class="text-muted">Sube el pantallazo. El sistema lo comprimirá automáticamente para mayor velocidad.</small>
             </div>
 
             <div class="mt-4 bg-dark p-3 rounded border border-secondary text-center">
-                <label class="form-label text-warning fw-bold">Verificación de Seguridad</label>
-                <div class="d-flex justify-content-center align-items-center gap-3">
-                    <input type="text" id="resCaptcha" class="form-control bg-black text-white border-secondary text-center fw-bold text-danger fs-4 w-25" readonly style="letter-spacing: 5px;">
-                    <i class="bi bi-arrow-right text-muted fs-4"></i>
-                    <input type="text" id="resCaptchaInput" class="form-control bg-black text-white border-warning text-center w-50" placeholder="Escribe el código" required>
+                <label class="form-label text-warning fw-bold">Verificación de Seguridad Anti-Spam</label>
+                <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 mt-2">
+                    <input type="text" id="resCaptcha" class="form-control bg-black text-white border-secondary text-center fw-bold text-danger fs-4" readonly style="letter-spacing: 5px; width: 130px !important;">
+                    <i class="bi bi-arrow-right text-muted fs-4 d-none d-sm-block"></i>
+                    <input type="text" id="resCaptchaInput" class="form-control bg-black text-white border-warning text-center" placeholder="Escribe el código" required style="width: 160px !important;">
                 </div>
             </div>
 
@@ -181,8 +192,8 @@
         <div class="card p-4 shadow-lg border-warning">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
                 <h2 id="panelTitle" class="text-warning m-0 fw-bold">⚙️ Panel de Control</h2>
-                <div>
-                    <button id="btnExportExcel" onclick="exportarCSV()" class="btn btn-success fw-bold hidden-section me-2"><i class="bi bi-file-earmark-excel"></i> Exportar Datos (Excel)</button>
+                <div class="d-flex flex-wrap justify-content-center gap-2">
+                    <button id="btnExportExcel" onclick="exportarCSV()" class="btn btn-success fw-bold hidden-section"><i class="bi bi-file-earmark-excel"></i> Exportar Datos (Excel)</button>
                     <button onclick="closeAdmin()" class="btn btn-outline-secondary">Cerrar Sesión Panel</button>
                 </div>
             </div>
@@ -223,9 +234,16 @@
                 </div>
             </div>
 
-            <h4 class="text-warning mt-4 mb-3 fw-bold"><i class="bi bi-list-check"></i> Gestión de Pedidos</h4>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mt-4 mb-3 gap-2">
+                <h4 class="text-warning m-0 fw-bold"><i class="bi bi-list-check"></i> Gestión de Pedidos</h4>
+                <div class="input-group style-search" style="max-width: 300px;">
+                    <span class="input-group-text bg-dark text-muted border-secondary"><i class="bi bi-search"></i></span>
+                    <input type="text" id="adminSearchInput" onkeyup="filtrarPedidos()" class="form-control bg-dark text-white border-secondary" placeholder="Buscar pedido...">
+                </div>
+            </div>
+
             <div class="table-responsive mb-5 bg-dark rounded border border-secondary p-2">
-                <table class="table table-dark table-hover align-middle mb-0">
+                <table class="table table-dark table-hover align-middle mb-0" style="min-width: 800px;">
                     <thead>
                         <tr class="text-warning"><th>ID / Hora</th><th>Cliente</th><th>Pedido</th><th>Total</th><th>Pago</th><th>Estado Logístico</th><th>Acción</th></tr>
                     </thead>
@@ -272,29 +290,37 @@
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="limpiarFormulario()"></button>
         </div>
         <div class="modal-body p-4">
-            <div id="invoiceContent" class="bg-light text-dark p-4 rounded text-center shadow-sm">
-                <h3 class="fw-bold mb-0">URBAN GRILL</h3>
+            <div id="invoiceContent" class="bg-light text-dark p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold mb-0 text-uppercase">URBAN GRILL</h3>
                 <p class="small text-muted mb-3">Feria Empresarial - IE Llano Verde</p>
-                <hr class="border-dark">
-                <div class="text-start font-monospace" style="font-size: 15px;">
-                    <p class="mb-1"><strong>Ticket #:</strong> <span id="invId"></span></p>
-                    <p class="mb-1"><strong>Fecha:</strong> <span id="invDate"></span></p>
-                    <p class="mb-1"><strong>Cliente:</strong> <span id="invName"></span></p>
-                    <p class="mb-3"><strong>Recogida:</strong> <span id="invTime" class="badge bg-dark fs-6"></span></p>
-                    <table class="table table-sm table-borderless font-monospace mb-0">
-                        <tr class="border-bottom border-dark"><th>Cant</th><th>Item</th><th class="text-end">Total</th></tr>
-                        <tr><td id="invQty"></td><td id="invProd"></td><td class="text-end fw-bold" id="invTotal"></td></tr>
+                <div style="border-top: 2px dashed #333; margin-bottom: 10px;"></div>
+                <div class="text-start font-monospace" style="font-size: 14px; line-height: 1.4;">
+                    <p class="mb-1"><strong>TICKET #:</strong> <span id="invId"></span></p>
+                    <p class="mb-1"><strong>FECHA:</strong> <span id="invDate"></span></p>
+                    <p class="mb-1"><strong>CLIENTE:</strong> <span id="invName"></span></p>
+                    <p class="mb-3"><strong>RECOGIDA:</strong> <span id="invTime" class="badge bg-dark fs-6 text-white"></span></p>
+                    
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+                        <tr style="border-bottom: 1px solid #333; text-align: left;">
+                            <th>CANT</th><th>ITEM</th><th style="text-align: right;">TOTAL</th>
+                        </tr>
+                        <tr>
+                            <td id="invQty" style="padding-top: 5px;"></td>
+                            <td id="invProd" style="padding-top: 5px;"></td>
+                            <td id="invTotal" style="text-align: right; font-weight: bold; padding-top: 5px;"></td>
+                        </tr>
                     </table>
+                    
                     <p class="small mt-2 mb-1 text-danger fw-bold" id="invDiscount"></p>
-                    <hr class="border-dark">
-                    <p class="mb-1"><strong>Pago:</strong> <span id="invPay"></span></p>
+                    <div style="border-top: 2px dashed #333; margin-top: 10px; margin-bottom: 10px;"></div>
+                    <p class="mb-1 text-center"><strong>MÉTODO PAGO:</strong> <span id="invPay"></span></p>
                 </div>
-                <h5 class="mt-4 fw-bold">¡GRACIAS POR APOYARNOS!</h5>
+                <h5 class="mt-4 fw-bold mb-0">¡GRACIAS POR TU COMPRA!</h5>
             </div>
             
             <div class="mt-4 d-grid gap-3">
-                <button onclick="imprimirFactura()" class="btn btn-success fw-bold rounded-pill"><i class="bi bi-printer-fill"></i> Guardar / Imprimir Ticket</button>
-                <button id="btnWhatsappOrder" class="btn btn-outline-light rounded-pill"><i class="bi bi-whatsapp"></i> Enviar al WhatsApp del Stand</button>
+                <button onclick="imprimirFactura()" class="btn btn-success fw-bold rounded-pill shadow"><i class="bi bi-printer-fill"></i> Imprimir / Guardar Ticket</button>
+                <button id="btnWhatsappOrder" class="btn btn-outline-light rounded-pill shadow text-dark"><i class="bi bi-whatsapp text-success"></i> Enviar al WhatsApp del Stand</button>
             </div>
         </div>
       </div>
@@ -307,4 +333,514 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getAut
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getDatabase, ref, set, push, update, onValue, remove, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBLfJyBKCo_Gpu1N9f8Fy-X68THPE_8ht4",
+        authDomain: "urbangrill-6c433.firebaseapp.com",
+        databaseURL: "https://urbangrill-6c433-default-rtdb.firebaseio.com",
+        projectId: "urbangrill-6c433",
+        storageBucket: "urbangrill-6c433.firebasestorage.app",
+        messagingSenderId: "747175851752",
+        appId: "1:747175851752:web:dcd8c95bc80adef369fb5d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
+
+    window.currentUser = null;
+    let currentCaptcha = "";
+    let isRouletteEnabled = true;
+    let cuponAplicado = null;
+    let allReservations = {}; 
+
+    // ---- NÚMERO DE WHATSAPP DEL STAND ----
+    const NUMERO_WHATSAPP_NEGOCIO = "573000000000"; 
+
+    const products = [
+        { name: 'Chuzo de Pollo', desc: 'Pechuga marinada a la parrilla con arepa y queso.', price: 9000, img: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=80' },
+        { name: 'Chuzo de Chorizo', desc: 'Chorizo artesanal asado al carbón con arepa.', price: 9500, img: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80' },
+        { name: 'Mixto BBQ', desc: 'Pollo y chorizo marinados en salsa BBQ de la casa.', price: 10000, img: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80' }
+    ];
+
+    const rouletteOptions = ["10% Descuento", "Gira de nuevo", "$1.000 Descuento", "Cede el turno", "¡Bono Especial!", "Gira de nuevo"];
+
+    // ---------------- EFECTOS DE SONIDO NATIVOS ----------------
+    function playSpinSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(300, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(700, ctx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.15);
+        } catch(e){}
+    }
+
+    function playWinSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.12, ctx.currentTime + i * 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.22);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + i * 0.1);
+                osc.stop(ctx.currentTime + i * 0.1 + 0.22);
+            });
+        } catch(e){}
+    }
+
+    // ---------------- GOOGLE AUTH ----------------
+    window.loginWithGoogle = () => signInWithPopup(auth, new GoogleAuthProvider()).catch(err => Swal.fire('Error', err.message, 'error'));
+    window.logoutUser = () => signOut(auth).then(() => Swal.fire('Adiós', 'Sesión cerrada exitosamente', 'success'));
+
+    // ---------------- UI FORMULARIO ----------------
+    window.toggleReceiptField = () => {
+        const method = document.getElementById('resPaymentMethod').value;
+        const container = document.getElementById('receiptContainer');
+        if(method === 'Transferencia') {
+            container.classList.remove('hidden-section');
+            document.getElementById('resReceiptFile').required = true;
+        } else {
+            container.classList.add('hidden-section');
+            document.getElementById('resReceiptFile').required = false;
+            document.getElementById('resReceiptFile').value = "";
+        }
+    };
+
+    window.calcularTotalReserva = () => {
+        const prodName = document.getElementById('resProduct').value;
+        const qty = parseInt(document.getElementById('resQty').value) || 1;
+        const prodObj = products.find(p => p.name === prodName);
+        let baseTotal = (prodObj ? prodObj.price : 0) * qty;
+        let finalTotal = baseTotal;
+
+        if (cuponAplicado) {
+            if (cuponAplicado.includes("10%")) finalTotal *= 0.90;
+            else if (cuponAplicado.includes("1.000")) finalTotal = Math.max(0, baseTotal - 1000);
+            else if (cuponAplicado.includes("Bono")) finalTotal = Math.max(0, baseTotal - 2000);
+            document.getElementById('couponDiscountMsg').innerText = `✓ Cupón aplicado (${cuponAplicado})`;
+        } else {
+            document.getElementById('couponDiscountMsg').innerText = "";
+        }
+        document.getElementById('resTotalDisplay').innerText = `$${Math.round(finalTotal).toLocaleString()} COP`;
+        return Math.round(finalTotal);
+    };
+
+    window.aplicarCupon = () => {
+        const code = document.getElementById('resCouponInput').value.trim();
+        if (!code) return Swal.fire('Oye', 'Ingresa un código válido primero', 'warning');
+        cuponAplicado = code;
+        window.calcularTotalReserva();
+        Swal.fire('¡Éxito!', `Cupón "${code}" aplicado a tu total.`, 'success');
+    };
+
+    window.usarPremioGuardado = () => {
+        const premioText = document.getElementById('walletPrize').innerText;
+        if (premioText && premioText !== "Ninguno" && premioText !== "Gira la ruleta arriba") {
+            document.getElementById('resCouponInput').value = premioText;
+            window.aplicarCupon();
+            document.getElementById('reservar').scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
+    // ---------------- RULETA ----------------
+    window.spinRoulette = () => {
+        if (!window.currentUser) return Swal.fire('¡Atención!', 'Inicia sesión con Google para poder guardar tu premio.', 'warning');
+
+        get(query(ref(database, 'premios_ruleta'), orderByChild('email'), equalTo(window.currentUser.email))).then(snap => {
+            if (snap.exists()) return Swal.fire('Ya jugaste', 'Revisa tu billetera, ya tienes un premio guardado.', 'info');
+
+            const display = document.getElementById('wheelDisplay'), btn = document.getElementById('spinBtn');
+            btn.disabled = true;
+            display.style.transform = `rotate(${Math.floor(1800 + Math.random() * 1800)}deg)`;
+            document.getElementById('rouletteResult').innerHTML = "Girando la suerte...";
+
+            let soundInterval = setInterval(playSpinSound, 250);
+
+            setTimeout(() => {
+                clearInterval(soundInterval);
+                const randomOption = rouletteOptions[Math.floor(Math.random() * rouletteOptions.length)];
+                display.innerHTML = randomOption;
+                document.getElementById('rouletteResult').innerHTML = `🎉 ¡Ganaste: ${randomOption}!`;
+                
+                if (randomOption !== "Gira de nuevo" && randomOption !== "Cede el turno") {
+                    playWinSound();
+                    push(ref(database, 'premios_ruleta'), {
+                        client: window.currentUser.displayName, email: window.currentUser.email,
+                        premio: randomOption, fecha: new Date().toLocaleString('es-CO')
+                    }).then(() => Swal.fire('¡Felicidades!', 'Tu premio ha sido guardado en tu billetera.', 'success'));
+                } else {
+                    btn.disabled = false;
+                }
+            }, 3000);
+        });
+    };
+
+    // ---------------- OPTIMIZADOR DE IMÁGENES ----------------
+    function comprimirImagen(file, callback) {
+        if (!file || !file.type.startsWith('image/')) {
+            callback("");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = event => {
+            const img = new Image();
+            img.onerror = () => callback("");
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 600;
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > MAX_WIDTH) {
+                    height = Math.round(height * (MAX_WIDTH / width));
+                    width = MAX_WIDTH;
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                callback(canvas.toDataURL('image/jpeg', 0.6));
+            };
+            img.src = event.target.result;
+        };
+        reader.onerror = () => callback("");
+        reader.readAsDataURL(file);
+    }
+
+    // ---------------- RESERVAS Y SEGURIDAD ANTIFRAUDE ----------------
+    window.handleReserve = (event) => {
+        event.preventDefault();
+        
+        if (document.getElementById('resCaptchaInput').value.trim() !== currentCaptcha) {
+            Swal.fire('Error', 'Código de seguridad incorrecto. Intenta de nuevo.', 'error');
+            generarCaptcha(); return;
+        }
+
+        const lastOrder = localStorage.getItem('ug_last_order');
+        if (lastOrder && (Date.now() - parseInt(lastOrder)) < 60000) {
+            return Swal.fire('🚨 Sistema de Seguridad', 'Acabas de enviar un pedido. Por favor espera 1 minuto antes de enviar otro.', 'warning');
+        }
+
+        const qty = parseInt(document.getElementById('resQty').value);
+        let isSuspicious = false;
+
+        if (qty > 8) {
+            Swal.fire({
+                title: '⚠️ Revisión de Seguridad',
+                text: `Estás intentando pedir ${qty} chuzos de una vez. Este pedido es inusualmente grande y será marcado para revisión manual. ¿Deseas continuar?`,
+                icon: 'warning', showCancelButton: true, confirmButtonText: 'Sí, enviar pedido'
+            }).then((result) => {
+                if (result.isConfirmed) { isSuspicious = true; procesarReserva(isSuspicious); }
+            });
+        } else {
+            procesarReserva(isSuspicious);
+        }
+    };
+
+    function procesarReserva(susFlag) {
+        document.getElementById('btnSubmitReserva').innerText = "Procesando...";
+        document.getElementById('btnSubmitReserva').disabled = true;
+
+        const data = {
+            name: document.getElementById('resName').value.trim(), 
+            phone: document.getElementById('resPhone').value.trim(),
+            product: document.getElementById('resProduct').value, 
+            qty: document.getElementById('resQty').value,
+            payment: document.getElementById('resPaymentMethod').value, 
+            time: document.getElementById('resTime').value,
+            total: window.calcularTotalReserva(), 
+            cupon: cuponAplicado || "Ninguno",
+            timestamp: new Date().toLocaleString('es-CO'), 
+            status: 'Pendiente', 
+            suspicious: susFlag
+        };
+        
+        const fileInput = document.getElementById('resReceiptFile');
+        
+        const guardarData = (base64Img) => {
+            data.receipt = base64Img;
+            const newRef = push(ref(database, 'reservas'));
+            const orderId = newRef.key.substring(1, 7).toUpperCase();
+            
+            set(newRef, data).then(() => {
+                localStorage.setItem('ug_last_order', Date.now()); 
+                generarFacturaUI(data, orderId);
+            }).catch(err => { Swal.fire('Error de Conexión', err.message, 'error'); resetBtn(); });
+        };
+
+        if (data.payment === 'Transferencia' && fileInput.files.length > 0) {
+            comprimirImagen(fileInput.files[0], guardarData);
+        } else { 
+            guardarData(""); 
+        }
+    }
+
+    function generarFacturaUI(data, orderId) {
+        document.getElementById('invId').innerText = orderId; 
+        document.getElementById('invDate').innerText = data.timestamp.split(',')[0];
+        document.getElementById('invName').innerText = data.name; 
+        document.getElementById('invTime').innerText = data.time;
+        document.getElementById('invQty').innerText = data.qty; 
+        document.getElementById('invProd').innerText = data.product;
+        document.getElementById('invTotal').innerText = "$" + data.total.toLocaleString(); 
+        document.getElementById('invPay').innerText = data.payment;
+        document.getElementById('invDiscount').innerText = data.cupon !== "Ninguno" ? `Desc. cupón: ${data.cupon}` : "";
+
+        const cleanPhone = data.phone.replace(/[^0-9]/g, '');
+        const waMsg = `*NUEVO PEDIDO URBAN GRILL* 🔥%0A%0A*Ticket:* #${orderId}%0A*Cliente:* ${data.name}%0A*Tel:* ${cleanPhone}%0A*Pedido:* ${data.qty}x ${data.product}%0A*Total:* $${data.total.toLocaleString()} COP%0A*Pago:* ${data.payment}%0A*Hora recogida:* ${data.time}`;
+        document.getElementById('btnWhatsappOrder').onclick = () => window.open(`https://wa.me/${NUMERO_WHATSAPP_NEGOCIO}?text=${waMsg}`, '_blank');
+        
+        new bootstrap.Modal(document.getElementById('invoiceModal')).show();
+    }
+
+    window.imprimirFactura = () => {
+        document.getElementById('printableInvoice').innerHTML = document.getElementById('invoiceContent').innerHTML;
+        window.print();
+    };
+
+    window.limpiarFormulario = () => {
+        document.getElementById('reserveForm').reset(); 
+        cuponAplicado = null; 
+        window.calcularTotalReserva();
+        generarCaptcha(); 
+        window.toggleReceiptField(); 
+        resetBtn();
+    };
+    
+    function resetBtn() { 
+        document.getElementById('btnSubmitReserva').innerHTML = 'Confirmar Pedido Seguro y Facturar <i class="bi bi-shield-check"></i>'; 
+        document.getElementById('btnSubmitReserva').disabled = false; 
+    }
+
+    // ---------------- ADMIN PANEL Y CONTADOR ----------------
+    window.requestAccess = (role) => {
+        Swal.fire({ 
+            title: `Ingreso de Seguridad (${role})`, 
+            input: 'password', 
+            inputAttributes: { autocapitalize: 'off' }, 
+            showCancelButton: true, 
+            confirmButtonText: 'Entrar al Sistema',
+            cancelButtonText: 'Cancelar'
+        }).then((res) => {
+            const pass = res.value;
+            if ((role === 'admin' && pass === 'admin123') || (role === 'accounting' && pass === 'conta123')) {
+                document.getElementById('adminPanel').classList.remove('hidden-section');
+                
+                if (role === 'accounting') {
+                    document.getElementById('accountingSummary').classList.remove('hidden-section');
+                    document.getElementById('btnExportExcel').classList.remove('hidden-section');
+                    document.getElementById('adminPromoTools').classList.add('hidden-section');
+                    document.getElementById('panelTitle').innerHTML = '<i class="bi bi-calculator"></i> Panel del Contador';
+                } else {
+                    document.getElementById('accountingSummary').classList.add('hidden-section');
+                    document.getElementById('btnExportExcel').classList.add('hidden-section');
+                    document.getElementById('adminPromoTools').classList.remove('hidden-section');
+                    document.getElementById('panelTitle').innerHTML = '<i class="bi bi-gear-fill"></i> Panel de Administración';
+                }
+                document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
+                Swal.fire('Acceso Concedido', 'Bienvenido al panel central.', 'success');
+            } else if (pass) {
+                Swal.fire('Acceso Denegado', 'La contraseña es incorrecta.', 'error');
+            }
+        });
+    };
+    
+    window.closeAdmin = () => document.getElementById('adminPanel').classList.add('hidden-section');
+    
+    window.publishPromo = () => {
+        const t = document.getElementById('adminPromoText').value.trim();
+        if(t) set(ref(database, 'promo_activa'), t).then(() => { 
+            Swal.fire('Lanzada', 'La promoción ahora es visible para todos los clientes.', 'success'); 
+            document.getElementById('adminPromoText').value=""; 
+        });
+    };
+    
+    window.toggleRouletteStatus = () => set(ref(database, 'ruleta_activa'), !isRouletteEnabled);
+    
+    window.eliminarReserva = id => {
+        Swal.fire({ title: '¿Estás seguro?', text: "Esto borrará el pedido de la base de datos.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, borrar' }).then(r => {
+            if(r.isConfirmed) remove(ref(database, 'reservas/' + id));
+        });
+    };
+    
+    window.verComprobante = img => { 
+        document.getElementById('modalReceiptImg').src = img; 
+        new bootstrap.Modal(document.getElementById('receiptModal')).show(); 
+    };
+    
+    window.updateStatus = (id, newStatus) => {
+        update(ref(database, 'reservas/' + id), { status: newStatus });
+    };
+
+    window.filtrarPedidos = () => {
+        const term = document.getElementById('adminSearchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('#reservationsTable tr');
+        rows.forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+        });
+    };
+
+    window.exportarCSV = () => {
+        let csv = "ID,Fecha,Nombre,Telefono,Producto,Cantidad,Total_COP,Metodo_Pago,Estado_Actual,Alerta_Seguridad\n";
+        for (let id in allReservations) {
+            let r = allReservations[id];
+            let alerta = r.suspicious ? "SI" : "NO";
+            csv += `${id.substring(1,7)},"${r.timestamp}","${r.name}","${r.phone}","${r.product}",${r.qty},${r.total},${r.payment},${r.status},${alerta}\n`;
+        }
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "Reporte_Contabilidad_UrbanGrill.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // ---------------- FUNCIONES AUXILIARES ----------------
+    function generarCaptcha() { 
+        document.getElementById('resCaptcha').value = currentCaptcha = Math.floor(1000 + Math.random() * 9000).toString(); 
+    }
+    
+    function renderMenu() {
+        document.getElementById('menuList').innerHTML = products.map(p => `
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0 bg-dark">
+                    <img src="${p.img}" class="card-img-top">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="text-warning fw-bold">${p.name}</h5>
+                        <p class="small text-light">${p.desc}</p>
+                        <p class="text-success fw-bold fs-4 mt-auto m-0">$${p.price.toLocaleString()}</p>
+                    </div>
+                </div>
+            </div>`).join('');
+            
+        document.getElementById('resProduct').innerHTML = products.map(p => `<option value="${p.name}">${p.name} - $${p.price.toLocaleString()}</option>`).join('');
+        window.calcularTotalReserva();
+    }
+
+    // ---------------- ESCUCHADORES EN TIEMPO REAL (FIREBASE) ----------------
+    onAuthStateChanged(auth, user => {
+        window.currentUser = user;
+        const authSec = document.getElementById('authSection'), profSec = document.getElementById('userProfileSection');
+        
+        if (user) {
+            authSec.classList.add('hidden-section'); 
+            profSec.classList.remove('hidden-section');
+            document.getElementById('userNameDisplay').innerText = `Hola, ${user.displayName.split(' ')[0]}`;
+            
+            onValue(query(ref(database, 'premios_ruleta'), orderByChild('email'), equalTo(user.email)), snap => {
+                document.getElementById('userWallet').classList.remove('hidden-section');
+                if (snap.exists()) {
+                    document.getElementById('spinBtn').disabled = true; 
+                    document.getElementById('wheelDisplay').innerHTML = "Ya ganaste";
+                    const data = snap.val(); 
+                    document.getElementById('walletPrize').innerText = data[Object.keys(data)[0]].premio;
+                } else {
+                    document.getElementById('spinBtn').disabled = !isRouletteEnabled; 
+                    document.getElementById('walletPrize').innerText = "Gira la ruleta arriba";
+                }
+            });
+        } else {
+            authSec.classList.remove('hidden-section'); 
+            profSec.classList.add('hidden-section');
+            document.getElementById('spinBtn').disabled = true; 
+            document.getElementById('userWallet').classList.add('hidden-section');
+            document.getElementById('wheelDisplay').innerHTML = "Inicia sesión";
+        }
+    });
+
+    onValue(ref(database, 'ruleta_activa'), snap => {
+        if(snap.exists()) {
+            isRouletteEnabled = snap.val();
+            const btn = document.getElementById('toggleRouletteBtn');
+            btn.className = isRouletteEnabled ? "btn btn-sm btn-danger fw-bold shadow-sm" : "btn btn-sm btn-success fw-bold shadow-sm";
+            btn.innerText = isRouletteEnabled ? "Desactivar Ruleta" : "Activar Ruleta";
+            if(window.currentUser) document.getElementById('spinBtn').disabled = !isRouletteEnabled;
+        }
+    });
+
+    onValue(ref(database, 'promo_activa'), snap => {
+        const b = document.getElementById('promoBanner');
+        if(snap.exists() && snap.val().trim() !== "") { 
+            document.getElementById('promoText').innerText = "📢 " + snap.val(); 
+            b.style.display = "block"; 
+        } else {
+            b.style.display = "none";
+        }
+    });
+
+    onValue(ref(database, 'reservas'), snap => {
+        const tbody = document.getElementById('reservationsTable');
+        tbody.innerHTML = ""; let count = 0, rev = 0, alerts = 0;
+        allReservations = snap.exists() ? snap.val() : {};
+
+        if (snap.exists()) {
+            const resArray = Object.entries(allReservations).reverse(); 
+            
+            resArray.forEach(([id, r]) => {
+                count++; rev += parseInt(r.total) || 0;
+                if(r.suspicious) alerts++;
+                
+                let btn = r.receipt ? `<img src="${r.receipt}" class="receipt-thumb mt-1" onclick="verComprobante('${r.receipt}')" title="Ver comprobante">` : '<span class="badge bg-secondary mt-1">Efectivo / Sin img</span>';
+                let trClass = r.suspicious ? 'flag-sus' : '';
+                let alertIcon = r.suspicious ? '<i class="bi bi-exclamation-triangle-fill text-danger fs-5" title="¡Pedido Grande / Sospechoso!"></i> ' : '';
+                
+                let selPend = r.status === 'Pendiente' ? 'selected' : '';
+                let selPrep = r.status === 'Preparando' ? 'selected' : '';
+                let selEntr = r.status === 'Entregado' ? 'selected' : '';
+
+                tbody.innerHTML += `
+                    <tr class="${trClass}">
+                        <td><span class="badge bg-light text-dark fw-bold mb-1">#${id.substring(1, 6)}</span><br><small>${r.time}</small></td>
+                        <td>${alertIcon}<strong>${r.name}</strong><br><small class="text-info">${r.phone}</small></td>
+                        <td class="fw-bold">${r.qty}x ${r.product}</td>
+                        <td class="text-success fw-bold">$${r.total.toLocaleString()}</td>
+                        <td>${r.payment}<br>${btn}</td>
+                        <td>
+                            <select class="status-select w-100" onchange="updateStatus('${id}', this.value)">
+                                <option value="Pendiente" ${selPend}>🔴 Pendiente</option>
+                                <option value="Preparando" ${selPrep}>🟡 Preparando</option>
+                                <option value="Entregado" ${selEntr}>🟢 Entregado</option>
+                            </select>
+                        </td>
+                        <td><button onclick="eliminarReserva('${id}')" class="btn btn-sm btn-outline-danger shadow-sm"><i class="bi bi-trash"></i></button></td>
+                    </tr>`;
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center py-4">No hay pedidos registrados aún.</td></tr>';
+        }
+        document.getElementById('totalOrders').innerText = count;
+        document.getElementById('totalRevenue').innerText = `$${rev.toLocaleString()}`;
+        document.getElementById('totalAlerts').innerText = alerts;
+    });
+
+    onValue(ref(database, 'premios_ruleta'), snap => {
+        const tbody = document.getElementById('rouletteWinnersTable'); tbody.innerHTML = "";
+        if(snap.exists()) {
+            Object.values(snap.val()).forEach(p => {
+                tbody.innerHTML += `<tr><td>${p.client}</td><td class="text-warning fw-bold">${p.premio}</td><td>${p.fecha}</td></tr>`;
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-muted text-center py-3">Aún no hay ganadores en la ruleta.</td></tr>';
+        }
+    });
+
+    window.onload = () => { renderMenu(); generarCaptcha(); };
+</script>
+</body>
+</html>
