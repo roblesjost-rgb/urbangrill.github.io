@@ -80,7 +80,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow">
     <div class="container">
-        <a class="navbar-brand text-warning fw-bold fs-3" href="#">🔥 Urban Grill</a>
+        <!-- LOGO Y TÍTULO A LA IZQUIERDA -->
+        <a class="navbar-brand d-flex align-items-center gap-2 text-warning fw-bold fs-3" href="#">
+            <img src="logo.jpg" alt="Logo Urban Grill" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; border: 2px solid #ff6f00;" onerror="this.src='https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=100&q=80'">
+            🔥 Urban Grill
+        </a>
+
         <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -556,7 +561,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         new bootstrap.Modal(document.getElementById('historyModal')).show();
     }
 
-    /* HISTORIAL RÁPIDO CON OPCIONES DE APLAZAR Y CANCELAR PEDIDO */
     window.buscarMiHistorial = () => {
         const phone = document.getElementById('searchPhoneHistory').value.trim();
         const container = document.getElementById('historyResultsContainer');
