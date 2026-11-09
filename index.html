@@ -350,13 +350,13 @@
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-4">
-          <p class="text-muted small">Ingresa el número de teléfono con el que realizaste tus reservas para buscar en nuestra base de datos.</p>
+          <p class="text-muted small">Ingresa el número de teléfono con el que realizaste tus reservas para buscar tus pedidos en tiempo real.</p>
           <div class="input-group mb-4">
               <input type="number" id="searchPhoneHistory" class="form-control bg-black text-white border-secondary" placeholder="Tu número telefónico...">
               <button onclick="buscarMiHistorial()" class="btn btn-info fw-bold">Buscar <i class="bi bi-search"></i></button>
           </div>
           <div id="historyResultsContainer" class="table-responsive">
-              <!-- Resultados de búsqueda -->
+              <!-- Resultados de búsqueda instantáneos -->
           </div>
         </div>
       </div>
@@ -507,29 +507,45 @@
         new bootstrap.Modal(document.getElementById('historyModal')).show();
     }
 
+    /* HISTORIAL RÁPIDO Y EN TIEMPO REAL CON ESTADO LOGÍSTICO VISIBLE */
     window.buscarMiHistorial = () => {
         const phone = document.getElementById('searchPhoneHistory').value.trim();
         const container = document.getElementById('historyResultsContainer');
         if (!phone) return Swal.fire('Atención', 'Ingresa un número de teléfono', 'warning');
         
-        container.innerHTML = '<p class="text-center text-info mt-3"><i class="bi bi-hourglass-split"></i> Buscando por IA en la base de datos...</p>';
+        let found = Object.entries(allReservations).filter(([id, r]) => r.phone === phone);
+        if(found.length === 0) {
+            container.innerHTML = `<div class="alert alert-secondary text-center mt-3">No encontramos pedidos registrados con el número ${phone}.</div>`;
+            return;
+        }
         
-        setTimeout(() => {
-            let found = Object.entries(allReservations).filter(([id, r]) => r.phone === phone);
-            if(found.length === 0) {
-                container.innerHTML = `<div class="alert alert-secondary text-center mt-3">No encontramos pedidos registrados con el número ${phone}.</div>`;
-                return;
-            }
+        let html = '<table class="table table-dark table-sm table-striped mt-3 align-middle"><thead><tr class="text-info"><th>Ticket / Fecha</th><th>Pedido</th><th>Total</th><th>Estado Logístico</th><th>Acción</th></tr></thead><tbody>';
+        found.forEach(([id, r]) => {
+            let badgeClass = 'bg-danger';
+            let statusIcon = 'bi-hourglass-split';
             
-            let html = '<table class="table table-dark table-sm table-striped mt-3"><thead><tr class="text-info"><th>ID / Fecha</th><th>Pedido</th><th>Total</th><th>Estado</th><th>Acción</th></tr></thead><tbody>';
-            found.forEach(([id, r]) => {
-                let badge = r.status === 'Entregado' ? 'bg-success' : (r.status === 'Preparando' ? 'bg-warning text-dark' : 'bg-danger');
-                let deleteBtn = r.status === 'Pendiente' ? `<button onclick="eliminarPedidoCliente('${id}', '${phone}')" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Cancelar</button>` : '<small class="text-muted">No cancelable</small>';
-                html += `<tr><td><span class="badge bg-secondary">#${id.substring(1,6)}</span><br>${r.timestamp.split(',')[0]}</td><td>${r.qty}x ${r.product}<br><small>${r.time}</small></td><td>$${r.total.toLocaleString()}</td><td><span class="badge ${badge}">${r.status}</span></td><td>${deleteBtn}</td></tr>`;
-            });
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        }, 800);
+            if (r.status === 'Entregado') {
+                badgeClass = 'bg-success';
+                statusIcon = 'bi-check-circle-fill';
+            } else if (r.status === 'Preparando') {
+                badgeClass = 'bg-warning text-dark';
+                statusIcon = 'bi-fire';
+            }
+
+            let deleteBtn = r.status === 'Pendiente' 
+                ? `<button onclick="eliminarPedidoCliente('${id}', '${phone}')" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Cancelar</button>` 
+                : '<small class="text-muted">No cancelable</small>';
+            
+            html += `<tr>
+                <td><span class="badge bg-secondary">#${id.substring(1,6)}</span><br><small class="text-muted">${r.timestamp.split(',')[0]}</small></td>
+                <td><strong>${r.qty}x ${r.product}</strong><br><small class="text-info"><i class="bi bi-clock"></i> Recogida: ${r.time}</small></td>
+                <td class="text-success fw-bold">$${r.total.toLocaleString()}</td>
+                <td><span class="badge ${badgeClass} fs-6 shadow-sm"><i class="bi ${statusIcon}"></i> ${r.status}</span></td>
+                <td>${deleteBtn}</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
     };
 
     window.eliminarPedidoCliente = (id, phone) => {
@@ -1019,6 +1035,13 @@
         document.getElementById('totalOrders').innerText = count;
         document.getElementById('totalRevenue').innerText = `$${rev.toLocaleString()}`;
         document.getElementById('totalAlerts').innerText = alerts;
+
+        // Si el modal del historial está abierto mientras el admin cambia un estado, refresca la vista del cliente automáticamente
+        const historyModal = document.getElementById('historyModal');
+        if (historyModal && historyModal.classList.contains('show')) {
+            const phoneInput = document.getElementById('searchPhoneHistory').value.trim();
+            if (phoneInput) window.buscarMiHistorial();
+        }
     });
 
     onValue(ref(database, 'premios'), snap => {
