@@ -32,6 +32,7 @@
         .roulette-wheel { width: 180px; height: 180px; border: 8px solid #ff6f00; border-radius: 50%; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; background: #2a2a2a; color: #ff6f00; transition: transform 3s ease-out; box-shadow: 0 0 20px rgba(255,111,0,0.4); text-align: center; padding: 10px;}
         .promo-banner { background: linear-gradient(45deg, #ff6f00, #b34e00); color: white; border-radius: 10px; padding: 15px; margin-bottom: 25px; text-align: center; font-weight: bold; display: none; }
         .receipt-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #ff6f00; cursor: pointer; transition: 0.2s;}
+        .receipt-thumb:hover { transform: scale(1.2); }
         
         .status-select { background: #333; color: white; border: 1px solid #555; border-radius: 5px; padding: 3px; font-size: 0.9rem; }
         .flag-sus { border: 2px solid #dc3545 !important; background-color: rgba(220,53,69,0.1); }
@@ -259,7 +260,7 @@
             <div id="adminPromoTools" class="mb-4 p-3 bg-dark border border-warning rounded shadow-sm">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="text-warning m-0 fw-bold"><i class="bi bi-megaphone"></i> Marketing y Ruleta</h5>
-                    <button id="toggleRouletteBtn" onclick="toggleRouletteStatus()" class="btn btn-sm btn-outline-warning">Cargando...</button>
+                    <button id="toggleRouletteBtn" onclick="toggleRouletteStatus()" class="btn btn-sm btn-outline-danger fw-bold shadow-sm">Desactivar Ruleta</button>
                 </div>
                 <div class="row g-2">
                     <div class="col-md-9">
@@ -366,11 +367,11 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content bg-dark text-white border-info shadow-lg">
       <div class="modal-header border-info">
-        <h5 class="modal-title text-info fw-bold"><i class="bi bi-receipt"></i> Verificación de Pago</h5>
+        <h5 class="modal-title text-info fw-bold"><i class="bi bi-receipt"></i> Verificación de Comprobante</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body text-center p-4">
-        <img id="modalReceiptImg" src="" class="img-fluid rounded shadow" alt="Comprobante">
+        <img id="modalReceiptImg" src="" class="img-fluid rounded shadow border border-warning" alt="Comprobante de pago" style="max-height: 400px; object-fit: contain;">
       </div>
     </div>
   </div>
@@ -442,10 +443,7 @@
     let allReservations = {}; 
     let securityLogs = []; 
 
-    // ---- NÚMERO DE WHATSAPP DEL STAND ----
     const NUMERO_WHATSAPP_NEGOCIO = "573000000000"; 
-    
-    // ---- LÍMITE DE PEDIDOS POR HORA EXACTA ----
     const MAX_PEDIDOS_POR_HORA = 3; 
 
     const products = [
@@ -456,28 +454,18 @@
 
     const rouletteOptions = ["10% Descuento", "Gira de nuevo", "$1.000 Descuento", "Cede el turno", "¡Bono Especial!", "Gira de nuevo"];
 
-    // -------- LÓGICA DE INSTAGRAM (DEEP LINK) --------
     window.abrirInstagram = (e) => {
         e.preventDefault();
         const username = 'street_urbangrill';
         const webUrl = `https://www.instagram.com/${username}/`;
-        
-        // Si detectamos que está en un celular (Android/iOS)
         if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-            // Intentamos forzar a que abra la APP nativa de Instagram
             window.location.href = `instagram://user?username=${username}`;
-            
-            // Si después de 800ms no la abrió (porque no la tiene instalada), abrimos la web
-            setTimeout(() => {
-                window.open(webUrl, '_blank');
-            }, 800);
+            setTimeout(() => { window.open(webUrl, '_blank'); }, 800);
         } else {
-            // Si está en computador, abre directo en otra pestaña
             window.open(webUrl, '_blank');
         }
     };
 
-    // -------- EFECTOS DE SONIDO --------
     function playSpinSound() {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -509,11 +497,9 @@
         } catch(e){}
     }
 
-    // -------- GOOGLE AUTH --------
     window.loginWithGoogle = () => signInWithPopup(auth, new GoogleAuthProvider()).catch(err => Swal.fire('Error', err.message, 'error'));
     window.logoutUser = () => signOut(auth).then(() => Swal.fire('Adiós', 'Sesión cerrada exitosamente', 'success'));
 
-    // -------- UI & FORMULARIO --------
     window.abrirAsistente = () => new bootstrap.Modal(document.getElementById('faqModal')).show();
     
     window.abrirHistorial = () => {
@@ -535,14 +521,34 @@
                 return;
             }
             
-            let html = '<table class="table table-dark table-sm table-striped mt-3"><thead><tr class="text-info"><th>Fecha</th><th>Pedido</th><th>Total</th><th>Estado</th></tr></thead><tbody>';
+            let html = '<table class="table table-dark table-sm table-striped mt-3"><thead><tr class="text-info"><th>ID / Fecha</th><th>Pedido</th><th>Total</th><th>Estado</th><th>Acción</th></tr></thead><tbody>';
             found.forEach(([id, r]) => {
                 let badge = r.status === 'Entregado' ? 'bg-success' : (r.status === 'Preparando' ? 'bg-warning text-dark' : 'bg-danger');
-                html += `<tr><td>${r.timestamp.split(',')[0]}<br><small>${r.time}</small></td><td>${r.qty}x ${r.product}</td><td>$${r.total.toLocaleString()}</td><td><span class="badge ${badge}">${r.status}</span></td></tr>`;
+                let deleteBtn = r.status === 'Pendiente' ? `<button onclick="eliminarPedidoCliente('${id}', '${phone}')" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Cancelar</button>` : '<small class="text-muted">No cancelable</small>';
+                html += `<tr><td><span class="badge bg-secondary">#${id.substring(1,6)}</span><br>${r.timestamp.split(',')[0]}</td><td>${r.qty}x ${r.product}<br><small>${r.time}</small></td><td>$${r.total.toLocaleString()}</td><td><span class="badge ${badge}">${r.status}</span></td><td>${deleteBtn}</td></tr>`;
             });
             html += '</tbody></table>';
             container.innerHTML = html;
-        }, 800); // Simulamos tiempo de búsqueda de IA
+        }, 800);
+    };
+
+    window.eliminarPedidoCliente = (id, phone) => {
+        Swal.fire({
+            title: '¿Deseas cancelar tu pedido?',
+            text: 'Esta acción eliminará tu reserva de la parrilla.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Sí, cancelar pedido'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                remove(ref(database, 'reservas/' + id)).then(() => {
+                    Swal.fire('Cancelado', 'Tu pedido ha sido eliminado.', 'success');
+                    document.getElementById('searchPhoneHistory').value = phone;
+                    window.buscarMiHistorial();
+                });
+            }
+        });
     };
 
     window.togglePaymentFields = () => {
@@ -627,8 +633,11 @@
         }
     };
 
-    // -------- RULETA LIBRE (CON O SIN SESIÓN) --------
     window.spinRoulette = async () => {
+        if (!isRouletteEnabled) {
+            return Swal.fire('Ruleta Inactiva', 'La ruleta se encuentra desactivada temporalmente por los administradores.', 'info');
+        }
+
         if (localStorage.getItem('ug_premio_ganado')) {
             return Swal.fire('Ya participaste', 'Ya ganaste un premio en este dispositivo. ¡Ve a hacer tu reserva!', 'info');
         }
@@ -703,7 +712,6 @@
         reader.readAsDataURL(file);
     }
 
-    // -------- SEGURIDAD: RESERVAS E IA --------
     function calcularRiesgoIA(qty, time) {
         if (qty >= 10) return "🔴 ALTO RIESGO";
         if (qty >= 5) return "🟡 RIESGO MEDIO";
@@ -805,7 +813,6 @@
         document.getElementById('totalAlerts').innerText = securityLogs.length;
     }
 
-    // -------- FACTURAS --------
     function generarFacturaUI(data, orderId) {
         document.getElementById('invId').innerText = orderId; 
         document.getElementById('invDate').innerText = data.timestamp.split(',')[0];
@@ -843,7 +850,6 @@
         document.getElementById('btnSubmitReserva').disabled = false; 
     }
 
-    // -------- ADMIN PANEL --------
     window.requestAccess = (role) => {
         Swal.fire({ 
             title: `Bóveda de Seguridad (${role})`, 
@@ -881,14 +887,24 @@
         if(t) set(ref(database, 'promo_activa'), t).then(() => { Swal.fire('Lanzada', 'Visible para todos.', 'success'); document.getElementById('adminPromoText').value=""; });
     };
     
-    window.toggleRouletteStatus = () => set(ref(database, 'ruleta_activa'), !isRouletteEnabled);
+    window.toggleRouletteStatus = () => {
+        const newState = !isRouletteEnabled;
+        set(ref(database, 'ruleta_activa'), newState).then(() => {
+            Swal.fire('Ruleta Actualizada', newState ? 'La ruleta ha sido activada.' : 'La ruleta ha sido desactivada.', 'success');
+        });
+    };
+
     window.eliminarReserva = id => {
-        Swal.fire({ title: '¿Borrar pedido?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, borrar' }).then(r => {
+        Swal.fire({ title: '¿Borrar pedido?', text: 'Como administrador vas a eliminar este registro de la parrilla.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, borrar' }).then(r => {
             if(r.isConfirmed) remove(ref(database, 'reservas/' + id));
         });
     };
     
-    window.verComprobante = img => { document.getElementById('modalReceiptImg').src = img; new bootstrap.Modal(document.getElementById('receiptModal')).show(); };
+    window.verComprobante = img => { 
+        document.getElementById('modalReceiptImg').src = img; 
+        new bootstrap.Modal(document.getElementById('receiptModal')).show(); 
+    };
+
     window.updateStatus = (id, newStatus) => update(ref(database, 'reservas/' + id), { status: newStatus });
 
     window.filtrarPedidos = () => {
@@ -910,7 +926,6 @@
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
     };
 
-    // -------- INICIO --------
     function generarCaptcha() { document.getElementById('resCaptcha').value = currentCaptcha = Math.floor(1000 + Math.random() * 9000).toString(); }
     
     function renderMenu() {
@@ -929,7 +944,6 @@
         window.calcularTotalReserva();
     }
 
-    // -------- ESCUCHADORES EN TIEMPO REAL (FIREBASE) --------
     onAuthStateChanged(auth, user => {
         window.currentUser = user;
         const authSec = document.getElementById('authSection'), profSec = document.getElementById('userProfileSection');
@@ -974,7 +988,7 @@
                 count++; rev += parseInt(r.total) || 0;
                 if(r.suspicious) alerts++;
                 
-                let btn = r.receipt ? `<img src="${r.receipt}" class="receipt-thumb mt-1" onclick="verComprobante('${r.receipt}')" title="Ver">` : '<span class="badge bg-secondary mt-1">Sin img</span>';
+                let btn = r.receipt ? `<img src="${r.receipt}" class="receipt-thumb mt-1" onclick="verComprobante('${r.receipt}')" title="Ver comprobante">` : '<span class="badge bg-secondary mt-1">Sin img</span>';
                 let trClass = r.suspicious ? 'flag-sus' : '';
                 let riesgoBadge = r.riesgoIA === "🟢 SEGURO" ? 'bg-success' : (r.riesgoIA === "🟡 RIESGO MEDIO" ? 'bg-warning text-dark' : 'bg-danger');
                 
@@ -985,7 +999,7 @@
                 tbody.innerHTML += `
                     <tr class="${trClass}">
                         <td><span class="badge bg-light text-dark fw-bold mb-1">#${id.substring(1, 6)}</span><br><small>${r.time}</small></td>
-                        <td><strong>${r.name}</strong><br><span class="badge ${riesgoBadge} mt-1">${r.riesgoIA}</span><br><small class="text-info">${r.phone}</small></td>
+                        <td><strong>${r.name}</strong><br><span class="badge ${riesgoBadge} mt-1">${r.riesgoIA || '🟢 SEGURO'}</span><br><small class="text-info">${r.phone}</small></td>
                         <td class="fw-bold">${r.qty}x ${r.product}</td>
                         <td class="text-success fw-bold">$${r.total.toLocaleString()}</td>
                         <td><small>${r.payment}</small><br>${btn}</td>
