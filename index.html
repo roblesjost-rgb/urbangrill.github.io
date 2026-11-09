@@ -296,12 +296,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
 
             <div class="table-responsive mb-5 bg-dark rounded border border-secondary p-2">
-                <table class="table table-dark table-hover align-middle mb-0" style="min-width: 900px;">
+                <table class="table table-dark table-hover align-middle mb-0" style="min-width: 950px;">
                     <thead>
-                        <tr class="text-warning"><th>Hora</th><th>Cliente / Riesgo IA</th><th>Pedido</th><th>Total</th><th>Pago</th><th>Estado Logístico</th><th>Acción</th></tr>
+                        <tr class="text-warning"><th>Hora</th><th>Cliente / Riesgo IA</th><th>Pedido</th><th>Total</th><th>Pago</th><th>Estado Logístico</th><th>Aviso WA</th><th>Acción</th></tr>
                     </thead>
                     <tbody id="reservationsTable">
-                        <tr><td colspan="7" class="text-muted text-center py-4">Cargando base de datos segura...</td></tr>
+                        <tr><td colspan="8" class="text-muted text-center py-4">Cargando base de datos segura...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -457,6 +457,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     let cuponAplicado = null;
     let allReservations = {}; 
     let securityLogs = []; 
+    let previousOrdersCount = null; // Variable para controlar el sonido de nuevos pedidos
 
     const NUMERO_WHATSAPP_NEGOCIO = "573000000000"; 
     const MAX_PEDIDOS_POR_HORA = 3; 
@@ -508,6 +509,25 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.22);
                 osc.connect(gain); gain.connect(ctx.destination);
                 osc.start(ctx.currentTime + i * 0.1); osc.stop(ctx.currentTime + i * 0.1 + 0.22);
+            });
+        } catch(e){}
+    }
+
+    /* FUNCIÓN DE SONIDO DE ALERTA PARA NUEVO PEDIDO EN EL ADMIN */
+    function playAdminAlertSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const notes = [880, 1318.51]; // Dos tonos estilo campana / caja registradora
+            notes.forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.15, ctx.currentTime + (i * 0.15));
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (i * 0.15) + 0.3);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + (i * 0.15)); 
+                osc.stop(ctx.currentTime + (i * 0.15) + 0.3);
             });
         } catch(e){}
     }
@@ -938,6 +958,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     window.updateStatus = (id, newStatus) => update(ref(database, 'reservas/' + id), { status: newStatus });
 
+    window.notificarClienteWhatsApp = (name, phone, qty, product, orderId) => {
+        const cleanPhone = phone.replace(/[^0-9]/g, '');
+        let formattedPhone = cleanPhone;
+        if (!cleanPhone.startsWith('57') && cleanPhone.length === 10) {
+            formattedPhone = '57' + cleanPhone;
+        }
+        
+        const textMsg = `¡Hola *${name}*! 🔥%0A%0ATu pedido *#${orderId}* (${qty}x ${product}) en *Urban Grill* ya está *LISTO PARA RECOGER* 🍢🔥%0A%0APuedes pasar por el stand principal a retirarlo. ¡Te esperamos!`;
+        const waUrl = `https://wa.me/${formattedPhone}?text=${textMsg}`;
+        window.open(waUrl, '_blank');
+    };
+
     window.filtrarPedidos = () => {
         const term = document.getElementById('adminSearchInput').value.toLowerCase();
         const rows = document.querySelectorAll('#reservationsTable tr');
@@ -1013,6 +1045,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         allReservations = snap.exists() ? snap.val() : {};
 
         if (snap.exists()) {
+            const currentCount = Object.keys(allReservations).length;
+            
+            // Si hay más pedidos que antes, suena la campana del admin
+            if (previousOrdersCount !== null && currentCount > previousOrdersCount) {
+                playAdminAlertSound();
+            }
+            previousOrdersCount = currentCount;
+
             const resArray = Object.entries(allReservations).reverse(); 
             
             resArray.forEach(([id, r]) => {
@@ -1027,9 +1067,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 let selPrep = r.status === 'Preparando' ? 'selected' : '';
                 let selEntr = r.status === 'Entregado' ? 'selected' : '';
 
+                const orderShortId = id.substring(1, 6);
+
                 tbody.innerHTML += `
                     <tr class="${trClass}">
-                        <td><span class="badge bg-light text-dark fw-bold mb-1">#${id.substring(1, 6)}</span><br><small>${r.time}</small></td>
+                        <td><span class="badge bg-light text-dark fw-bold mb-1">#${orderShortId}</span><br><small>${r.time}</small></td>
                         <td><strong>${r.name}</strong><br><span class="badge ${riesgoBadge} mt-1">${r.riesgoIA || '🟢 SEGURO'}</span><br><small class="text-info">${r.phone}</small></td>
                         <td class="fw-bold">${r.qty}x ${r.product}</td>
                         <td class="text-success fw-bold">$${r.total.toLocaleString()}</td>
@@ -1041,17 +1083,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                 <option value="Entregado" ${selEntr}>🟢 Entregado</option>
                             </select>
                         </td>
+                        <td>
+                            <button onclick="notificarClienteWhatsApp('${r.name}', '${r.phone}', '${r.qty}', '${r.product}', '${orderShortId}')" class="btn btn-sm btn-success fw-bold shadow-sm">
+                                <i class="bi bi-whatsapp"></i> Avisar
+                            </button>
+                        </td>
                         <td><button onclick="eliminarReserva('${id}')" class="btn btn-sm btn-outline-danger shadow-sm"><i class="bi bi-trash"></i></button></td>
                     </tr>`;
             });
         } else {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center py-4">No hay pedidos registrados aún.</td></tr>';
+            previousOrdersCount = 0;
+            tbody.innerHTML = '<tr><td colspan="8" class="text-muted text-center py-4">No hay pedidos registrados aún.</td></tr>';
         }
         document.getElementById('totalOrders').innerText = count;
         document.getElementById('totalRevenue').innerText = `$${rev.toLocaleString()}`;
         document.getElementById('totalAlerts').innerText = alerts;
 
-        // Si el modal del historial está abierto mientras el admin cambia un estado, refresca la vista del cliente automáticamente
         const historyModal = document.getElementById('historyModal');
         if (historyModal && historyModal.classList.contains('show')) {
             const phoneInput = document.getElementById('searchPhoneHistory').value.trim();
