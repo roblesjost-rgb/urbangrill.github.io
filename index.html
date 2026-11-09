@@ -15,33 +15,27 @@
     <style>
         body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .navbar { background-color: #1e1e1e; border-bottom: 2px solid #ff6f00; z-index: 1000; }
-        .card { background-color: #1e1e1e; color: #fff; border: 1px solid #333; border-radius: 12px; overflow: hidden; transition: transform 0.2s; }
+        .card { background-color: #1e1e1e; color: #fff; border: 1px solid #333; border-radius: 12px; transition: transform 0.2s; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(255,111,0,0.2); }
         .card-img-top { height: 200px; object-fit: cover; border-bottom: 3px solid #ff6f00; }
         .btn-orange { background-color: #ff6f00; color: white; border: none; font-weight: bold; border-radius: 8px; }
-        .btn-orange:hover { background-color: #e66000; color: white; transform: scale(1.02); transition: 0.2s;}
+        .btn-orange:hover { background-color: #e66000; color: white; transform: scale(1.02); }
         .hidden-section { display: none !important; }
         
-        /* Botones Mejorados */
         .btn-instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: white; border: none; border-radius: 20px; font-weight: bold; padding: 6px 15px; text-decoration: none;}
-        .btn-instagram:hover { color: white; opacity: 0.9; transform: scale(1.05); transition: 0.3s; }
-        .btn-google { background-color: #ffffff; color: #333; border: none; border-radius: 20px; font-weight: bold; padding: 6px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; }
-        .btn-google:hover { background-color: #f1f1f1; transform: scale(1.05); transition: 0.3s; }
+        .btn-instagram:hover { color: white; transform: scale(1.05); }
+        .btn-google { background-color: #ffffff; color: #333; border: none; border-radius: 20px; font-weight: bold; padding: 6px 15px; display: flex; align-items: center; gap: 8px; }
+        .btn-google:hover { background-color: #f1f1f1; transform: scale(1.05); }
         .btn-google img { width: 16px; height: 16px; }
 
-        /* Estilos Ruleta */
-        .roulette-container { text-align: center; background: #1a1a1a; border: 2px solid #ff6f00; border-radius: 12px; padding: 25px; margin-top: 30px; overflow: hidden;}
+        .roulette-container { text-align: center; background: #1a1a1a; border: 2px solid #ff6f00; border-radius: 12px; padding: 25px; margin-top: 30px; }
         .roulette-wheel { width: 180px; height: 180px; border: 8px solid #ff6f00; border-radius: 50%; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; background: #2a2a2a; color: #ff6f00; transition: transform 3s ease-out; box-shadow: 0 0 20px rgba(255,111,0,0.4); text-align: center; padding: 10px;}
         .promo-banner { background: linear-gradient(45deg, #ff6f00, #b34e00); color: white; border-radius: 10px; padding: 15px; margin-bottom: 25px; text-align: center; font-weight: bold; display: none; }
         .receipt-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #ff6f00; cursor: pointer; transition: 0.2s;}
-        .receipt-thumb:hover { transform: scale(1.2); }
-
-        /* Estilos para estado de pedidos */
-        .status-select { background: #333; color: white; border: 1px solid #555; border-radius: 5px; padding: 4px; font-size: 0.9rem; font-weight: bold;}
-        .status-select:focus { outline: none; border-color: #ff6f00; }
+        
+        .status-select { background: #333; color: white; border: 1px solid #555; border-radius: 5px; padding: 3px; font-size: 0.9rem; }
         .flag-sus { border: 2px solid #dc3545 !important; background-color: rgba(220,53,69,0.1); }
 
-        /* ESTILOS PROFESIONALES DE IMPRESIÓN (TICKET TÉRMICO POS) */
         @media print {
             body * { visibility: hidden; }
             #printableInvoice, #printableInvoice * { visibility: visible; }
@@ -101,10 +95,10 @@
         <div class="row g-4" id="menuList"></div>
     </div>
 
-    <!-- RULETA -->
+    <!-- RULETA REPARADA CON UID -->
     <div class="roulette-container mb-5 shadow-lg">
         <h3 class="text-warning mb-2 fw-bold">🎡 Ruleta de Descuentos</h3>
-        <p id="rouletteSubtext" class="text-muted small">Inicia sesión con Google para girar y ganar bonos para tu reserva.</p>
+        <p class="text-muted small">Inicia sesión con Google para girar. 100% garantizado.</p>
         
         <div id="wheelDisplay" class="roulette-wheel shadow">Inicia sesión</div>
         <button id="spinBtn" onclick="spinRoulette()" class="btn btn-orange px-5 py-2 rounded-pill fs-5 shadow" disabled>¡Girar Ruleta!</button>
@@ -118,18 +112,18 @@
         </div>
     </div>
 
-    <!-- RESERVAS SEGURAS -->
+    <!-- RESERVAS CON CONTROL DE AGENDA Y TARJETAS -->
     <div id="reservar" class="card p-4 p-md-5 mb-5 shadow-lg border-warning">
         <h3 class="text-warning mb-4 fw-bold"><i class="bi bi-cart-check-fill"></i> Registra tu Pedido</h3>
         <form id="reserveForm" onsubmit="handleReserve(event)">
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label text-warning fw-bold">Nombre Completo</label>
-                    <input type="text" id="resName" class="form-control bg-dark text-white border-secondary" placeholder="Ej: Tu Nombre" required>
+                    <input type="text" id="resName" class="form-control bg-dark text-white border-secondary" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label text-warning fw-bold">Teléfono / WhatsApp</label>
-                    <input type="number" id="resPhone" class="form-control bg-dark text-white border-secondary" placeholder="Ej: 3001234567" required>
+                    <input type="number" id="resPhone" class="form-control bg-dark text-white border-secondary" required>
                 </div>
                 <div class="col-md-5">
                     <label class="form-label text-warning fw-bold">Selecciona tu Chuzo</label>
@@ -140,16 +134,45 @@
                     <input type="number" id="resQty" min="1" max="50" value="1" class="form-control bg-dark text-white border-secondary fw-bold text-center" onchange="calcularTotalReserva()" required>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label text-warning fw-bold">Hora de recogida estimada</label>
+                    <label class="form-label text-warning fw-bold">Hora de recogida <i class="bi bi-clock-history"></i></label>
                     <input type="time" id="resTime" class="form-control bg-dark text-white border-secondary" required>
+                    <small class="text-info" id="timeStatusMsg">El sistema verificará disponibilidad.</small>
                 </div>
                 <div class="col-md-12 mt-4">
                     <label class="form-label text-warning fw-bold">Método de Pago</label>
-                    <select id="resPaymentMethod" class="form-select bg-dark text-white border-secondary" onchange="toggleReceiptField()" required>
+                    <select id="resPaymentMethod" class="form-select bg-dark text-white border-secondary" onchange="togglePaymentFields()" required>
                         <option value="Efectivo">💵 Efectivo (Pago presencial en el stand)</option>
                         <option value="Transferencia">📱 Transferencia (Nequi/Daviplata)</option>
+                        <option value="Tarjeta">💳 Tarjeta de Crédito / Débito</option>
                     </select>
                 </div>
+            </div>
+
+            <!-- PASARELA DE TARJETA -->
+            <div id="creditCardContainer" class="mt-3 hidden-section p-4 bg-black border border-info rounded shadow-sm">
+                <h5 class="text-info fw-bold mb-3"><i class="bi bi-shield-lock-fill"></i> Pasarela de Pago Segura</h5>
+                <div class="row g-2">
+                    <div class="col-md-12">
+                        <input type="text" id="ccName" class="form-control bg-dark text-white border-secondary" placeholder="Nombre en la tarjeta">
+                    </div>
+                    <div class="col-md-12">
+                        <input type="text" id="ccNumber" class="form-control bg-dark text-white border-secondary" placeholder="Número de Tarjeta (16 dígitos sin espacios)" maxlength="16">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" id="ccExp" class="form-control bg-dark text-white border-secondary" placeholder="MM/AA (Vencimiento)" maxlength="5">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="password" id="ccCVV" class="form-control bg-dark text-white border-secondary" placeholder="CVV (3 dígitos)" maxlength="3">
+                    </div>
+                </div>
+                <p class="small text-muted mt-2 m-0 text-center"><i class="bi bi-lock"></i> Procesamiento cifrado 256-bit.</p>
+            </div>
+
+            <!-- COMPROBANTE TRANSFERENCIA -->
+            <div id="receiptContainer" class="mt-3 hidden-section p-3 bg-dark border border-success rounded">
+                <label class="form-label text-success fw-bold">📸 Adjuntar Comprobante (Obligatorio para Transferencias)</label>
+                <input type="file" id="resReceiptFile" accept="image/*" class="form-control bg-black text-white border-secondary">
+                <small class="text-muted">El sistema comprimirá la imagen automáticamente.</small>
             </div>
 
             <!-- CUPÓN -->
@@ -168,12 +191,6 @@
                 </div>
             </div>
 
-            <div id="receiptContainer" class="mt-3 hidden-section p-3 bg-dark border border-info rounded">
-                <label class="form-label text-info fw-bold">📸 Adjuntar Comprobante (Obligatorio)</label>
-                <input type="file" id="resReceiptFile" accept="image/*" class="form-control bg-black text-white border-secondary">
-                <small class="text-muted">Sube el pantallazo. El sistema lo comprimirá automáticamente para mayor velocidad.</small>
-            </div>
-
             <div class="mt-4 bg-dark p-3 rounded border border-secondary text-center">
                 <label class="form-label text-warning fw-bold">Verificación de Seguridad Anti-Spam</label>
                 <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 mt-2">
@@ -183,7 +200,7 @@
                 </div>
             </div>
 
-            <button type="submit" id="btnSubmitReserva" class="btn btn-orange w-100 py-3 mt-4 fs-5 rounded-pill shadow">Confirmar Pedido Seguro y Facturar <i class="bi bi-shield-check"></i></button>
+            <button type="submit" id="btnSubmitReserva" class="btn btn-orange w-100 py-3 mt-4 fs-5 rounded-pill shadow">Confirmar Pedido Seguro <i class="bi bi-shield-check"></i></button>
         </form>
     </div>
 
@@ -193,9 +210,37 @@
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
                 <h2 id="panelTitle" class="text-warning m-0 fw-bold">⚙️ Panel de Control</h2>
                 <div class="d-flex flex-wrap justify-content-center gap-2">
-                    <button id="btnExportExcel" onclick="exportarCSV()" class="btn btn-success fw-bold hidden-section"><i class="bi bi-file-earmark-excel"></i> Exportar Datos (Excel)</button>
-                    <button onclick="closeAdmin()" class="btn btn-outline-secondary">Cerrar Sesión Panel</button>
+                    <button id="btnExportExcel" onclick="exportarCSV()" class="btn btn-success fw-bold hidden-section"><i class="bi bi-file-earmark-excel"></i> Exportar (Excel)</button>
+                    <button onclick="closeAdmin()" class="btn btn-outline-secondary">Cerrar Panel</button>
                 </div>
+            </div>
+            
+            <div id="accountingSummary" class="row mb-4 hidden-section g-3">
+                <div class="col-md-4">
+                    <div class="p-3 bg-dark border border-success rounded text-center shadow-sm">
+                        <p class="text-success m-0 small fw-bold">Ingresos Estimados</p>
+                        <h3 id="totalRevenue" class="text-white m-0 mt-2">$0</h3>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-dark border border-info rounded text-center shadow-sm">
+                        <p class="text-info m-0 small fw-bold">Pedidos Totales</p>
+                        <h3 id="totalOrders" class="text-white m-0 mt-2">0</h3>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-dark border border-danger rounded text-center shadow-sm">
+                        <p class="text-danger m-0 small fw-bold">Bloqueos de Seguridad</p>
+                        <h3 id="totalAlerts" class="text-white m-0 mt-2">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div id="securityDashboard" class="mb-4 p-3 bg-black border border-danger rounded shadow-sm hidden-section">
+                <h5 class="text-danger m-0 fw-bold"><i class="bi bi-shield-exclamation"></i> Log de Seguridad Reciente</h5>
+                <ul id="securityLogList" class="text-muted small mt-2 m-0" style="list-style-type: none; padding: 0;">
+                    <li>No hay alertas registradas aún.</li>
+                </ul>
             </div>
             
             <div id="adminPromoTools" class="mb-4 p-3 bg-dark border border-warning rounded shadow-sm">
@@ -213,29 +258,8 @@
                 </div>
             </div>
 
-            <div id="accountingSummary" class="row mb-4 hidden-section g-3">
-                <div class="col-md-4">
-                    <div class="p-3 bg-dark border border-success rounded text-center shadow-sm">
-                        <p class="text-success m-0 small fw-bold">Total Ingresos Estimados</p>
-                        <h3 id="totalRevenue" class="text-white m-0 mt-2">$0</h3>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="p-3 bg-dark border border-info rounded text-center shadow-sm">
-                        <p class="text-info m-0 small fw-bold">Pedidos Totales</p>
-                        <h3 id="totalOrders" class="text-white m-0 mt-2">0</h3>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="p-3 bg-dark border border-danger rounded text-center shadow-sm">
-                        <p class="text-danger m-0 small fw-bold">Alertas de Seguridad</p>
-                        <h3 id="totalAlerts" class="text-white m-0 mt-2">0</h3>
-                    </div>
-                </div>
-            </div>
-
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mt-4 mb-3 gap-2">
-                <h4 class="text-warning m-0 fw-bold"><i class="bi bi-list-check"></i> Gestión de Pedidos</h4>
+                <h4 class="text-warning m-0 fw-bold"><i class="bi bi-list-check"></i> Gestión de Pedidos (Parrilla)</h4>
                 <div class="input-group style-search" style="max-width: 300px;">
                     <span class="input-group-text bg-dark text-muted border-secondary"><i class="bi bi-search"></i></span>
                     <input type="text" id="adminSearchInput" onkeyup="filtrarPedidos()" class="form-control bg-dark text-white border-secondary" placeholder="Buscar pedido...">
@@ -245,7 +269,7 @@
             <div class="table-responsive mb-5 bg-dark rounded border border-secondary p-2">
                 <table class="table table-dark table-hover align-middle mb-0" style="min-width: 800px;">
                     <thead>
-                        <tr class="text-warning"><th>ID / Hora</th><th>Cliente</th><th>Pedido</th><th>Total</th><th>Pago</th><th>Estado Logístico</th><th>Acción</th></tr>
+                        <tr class="text-warning"><th>Hora</th><th>Cliente</th><th>Pedido</th><th>Total</th><th>Pago</th><th>Estado</th><th>Acción</th></tr>
                     </thead>
                     <tbody id="reservationsTable">
                         <tr><td colspan="7" class="text-muted text-center py-4">Cargando base de datos segura...</td></tr>
@@ -256,7 +280,7 @@
             <h4 class="text-warning mb-3 fw-bold"><i class="bi bi-gift"></i> Auditoría de Premios</h4>
             <div class="table-responsive bg-dark rounded border border-secondary p-2">
                 <table class="table table-dark table-sm table-striped align-middle mb-0">
-                    <thead><tr class="text-info"><th>Cliente (Google)</th><th>Premio</th><th>Fecha y Hora</th></tr></thead>
+                    <thead><tr class="text-info"><th>Cliente</th><th>Premio</th><th>Fecha y Hora</th></tr></thead>
                     <tbody id="rouletteWinnersTable">
                         <tr><td colspan="3" class="text-muted text-center py-3">Cargando auditoría...</td></tr>
                     </tbody>
@@ -266,7 +290,7 @@
     </div>
 </div>
 
-<!-- MODAL COMPROBANTE -->
+<!-- MODALES (FACTURA Y COMPROBANTE) -->
 <div class="modal fade" id="receiptModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content bg-dark text-white border-info shadow-lg">
@@ -281,7 +305,6 @@
   </div>
 </div>
 
-<!-- MODAL FACTURA CLIENTE -->
 <div class="modal fade" id="invoiceModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content bg-dark text-white border-success shadow-lg">
@@ -329,12 +352,12 @@
 
 <div id="printableInvoice" class="hidden-section"></div>
 
-<!-- LIBRERÍAS Y SCRIPTS -->
+<!-- SCRIPTS DE FIREBASE Y LÓGICA -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    import { getDatabase, ref, set, push, update, onValue, remove, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+    import { getDatabase, ref, set, push, update, onValue, remove, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBLfJyBKCo_Gpu1N9f8Fy-X68THPE_8ht4",
@@ -355,9 +378,13 @@
     let isRouletteEnabled = true;
     let cuponAplicado = null;
     let allReservations = {}; 
+    let securityLogs = []; // Historial de seguridad
 
     // ---- NÚMERO DE WHATSAPP DEL STAND ----
     const NUMERO_WHATSAPP_NEGOCIO = "573000000000"; 
+    
+    // ---- LÍMITE DE PEDIDOS POR HORA EXACTA ----
+    const MAX_PEDIDOS_POR_HORA = 3; 
 
     const products = [
         { name: 'Chuzo de Pollo', desc: 'Pechuga marinada a la parrilla con arepa y queso.', price: 9000, img: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=80' },
@@ -403,21 +430,38 @@
         } catch(e){}
     }
 
-    // ---------------- GOOGLE AUTH ----------------
+    // -------- GOOGLE AUTH --------
     window.loginWithGoogle = () => signInWithPopup(auth, new GoogleAuthProvider()).catch(err => Swal.fire('Error', err.message, 'error'));
     window.logoutUser = () => signOut(auth).then(() => Swal.fire('Adiós', 'Sesión cerrada exitosamente', 'success'));
 
-    // ---------------- UI FORMULARIO ----------------
-    window.toggleReceiptField = () => {
+    // -------- UI & FORMULARIO --------
+    window.togglePaymentFields = () => {
         const method = document.getElementById('resPaymentMethod').value;
-        const container = document.getElementById('receiptContainer');
+        const receiptBox = document.getElementById('receiptContainer');
+        const cardBox = document.getElementById('creditCardContainer');
+        
+        // Mostrar Ocultar Transferencia
         if(method === 'Transferencia') {
-            container.classList.remove('hidden-section');
+            receiptBox.classList.remove('hidden-section');
             document.getElementById('resReceiptFile').required = true;
         } else {
-            container.classList.add('hidden-section');
+            receiptBox.classList.add('hidden-section');
             document.getElementById('resReceiptFile').required = false;
-            document.getElementById('resReceiptFile').value = "";
+        }
+
+        // Mostrar Ocultar Tarjeta
+        if (method === 'Tarjeta') {
+            cardBox.classList.remove('hidden-section');
+            document.getElementById('ccName').required = true;
+            document.getElementById('ccNumber').required = true;
+            document.getElementById('ccExp').required = true;
+            document.getElementById('ccCVV').required = true;
+        } else {
+            cardBox.classList.add('hidden-section');
+            document.getElementById('ccName').required = false;
+            document.getElementById('ccNumber').required = false;
+            document.getElementById('ccExp').required = false;
+            document.getElementById('ccCVV').required = false;
         }
     };
 
@@ -457,12 +501,15 @@
         }
     };
 
-    // ---------------- RULETA ----------------
+    // -------- RULETA REPARADA (UID) --------
     window.spinRoulette = () => {
-        if (!window.currentUser) return Swal.fire('¡Atención!', 'Inicia sesión con Google para poder guardar tu premio.', 'warning');
-
-        get(query(ref(database, 'premios_ruleta'), orderByChild('email'), equalTo(window.currentUser.email))).then(snap => {
-            if (snap.exists()) return Swal.fire('Ya jugaste', 'Revisa tu billetera, ya tienes un premio guardado.', 'info');
+        if (!window.currentUser) return Swal.fire('¡Atención!', 'Inicia sesión con Google primero.', 'warning');
+        
+        // USA EL UID, CERO PROBLEMAS DE REGLAS DE FIREBASE
+        const prizeRef = ref(database, 'premios/' + window.currentUser.uid);
+        
+        get(prizeRef).then(snap => {
+            if (snap.exists()) return Swal.fire('Ya participaste', 'Ya tienes un premio en tu billetera.', 'info');
 
             const display = document.getElementById('wheelDisplay'), btn = document.getElementById('spinBtn');
             btn.disabled = true;
@@ -479,18 +526,20 @@
                 
                 if (randomOption !== "Gira de nuevo" && randomOption !== "Cede el turno") {
                     playWinSound();
-                    push(ref(database, 'premios_ruleta'), {
-                        client: window.currentUser.displayName, email: window.currentUser.email,
-                        premio: randomOption, fecha: new Date().toLocaleString('es-CO')
-                    }).then(() => Swal.fire('¡Felicidades!', 'Tu premio ha sido guardado en tu billetera.', 'success'));
+                    set(prizeRef, { // Lo guarda directamente al ID del usuario
+                        client: window.currentUser.displayName,
+                        email: window.currentUser.email,
+                        premio: randomOption, 
+                        fecha: new Date().toLocaleString('es-CO')
+                    }).then(() => Swal.fire('¡Felicidades!', 'Premio guardado en tu billetera.', 'success'));
                 } else {
-                    btn.disabled = false;
+                    btn.disabled = false; 
                 }
             }, 3000);
-        });
+        }).catch(err => Swal.fire('Error de Nube', err.message, 'error'));
     };
 
-    // ---------------- OPTIMIZADOR DE IMÁGENES ----------------
+    // -------- OPTIMIZADOR DE IMÁGENES --------
     function comprimirImagen(file, callback) {
         if (!file || !file.type.startsWith('image/')) {
             callback("");
@@ -522,41 +571,64 @@
         reader.readAsDataURL(file);
     }
 
-    // ---------------- RESERVAS Y SEGURIDAD ANTIFRAUDE ----------------
+    // -------- SEGURIDAD: RESERVAS Y AGENDA --------
     window.handleReserve = (event) => {
         event.preventDefault();
         
+        // 1. Verificación Captcha
         if (document.getElementById('resCaptchaInput').value.trim() !== currentCaptcha) {
-            Swal.fire('Error', 'Código de seguridad incorrecto. Intenta de nuevo.', 'error');
+            registrarAlertaSeguridad("Captcha fallido por usuario no identificado.");
+            Swal.fire('Error', 'Código de seguridad incorrecto.', 'error');
             generarCaptcha(); return;
         }
 
+        // 2. Control Anti-Spam
         const lastOrder = localStorage.getItem('ug_last_order');
         if (lastOrder && (Date.now() - parseInt(lastOrder)) < 60000) {
-            return Swal.fire('🚨 Sistema de Seguridad', 'Acabas de enviar un pedido. Por favor espera 1 minuto antes de enviar otro.', 'warning');
+            registrarAlertaSeguridad("Intento de Spam bloqueado.");
+            return Swal.fire('🚨 Sistema de Seguridad', 'Has hecho un pedido muy recientemente. Espera 1 minuto.', 'warning');
         }
 
-        const qty = parseInt(document.getElementById('resQty').value);
-        let isSuspicious = false;
+        const data = extraerDatosFormulario();
 
-        if (qty > 8) {
-            Swal.fire({
-                title: '⚠️ Revisión de Seguridad',
-                text: `Estás intentando pedir ${qty} chuzos de una vez. Este pedido es inusualmente grande y será marcado para revisión manual. ¿Deseas continuar?`,
-                icon: 'warning', showCancelButton: true, confirmButtonText: 'Sí, enviar pedido'
-            }).then((result) => {
-                if (result.isConfirmed) { isSuspicious = true; procesarReserva(isSuspicious); }
+        // 3. Control de Agenda (Cupos por Hora)
+        let cuposOcupados = 0;
+        for (let id in allReservations) {
+            if (allReservations[id].time === data.time && allReservations[id].status !== 'Entregado') {
+                cuposOcupados++;
+            }
+        }
+        if (cuposOcupados >= MAX_PEDIDOS_POR_HORA) {
+            registrarAlertaSeguridad(`Agenda llena intentada a las ${data.time}`);
+            return Swal.fire({
+                title: '🕒 Hora Saturada', 
+                text: `Ya tenemos ${cuposOcupados} pedidos agendados exactamente para las ${data.time}. Por favor, selecciona una hora diferente para asegurar que tu chuzo salga caliente y a tiempo.`, 
+                icon: 'warning'
             });
+        }
+
+        // 4. Verificación de Tarjeta de Crédito (Mock Seguro)
+        if (data.payment === 'Tarjeta') {
+            const ccNumber = document.getElementById('ccNumber').value.replace(/\s/g, '');
+            if (ccNumber.length < 15) return Swal.fire('Error', 'Número de tarjeta inválido', 'error');
+            // Enmascaramos la tarjeta por seguridad
+            data.payment = `Tarjeta (**** ${ccNumber.slice(-4)})`;
+        }
+
+        // 5. Control Pedidos Inusuales
+        if (data.qty > 8) {
+            registrarAlertaSeguridad(`Pedido masivo de ${data.qty} chuzos para revisión.`);
+            Swal.fire({
+                title: '⚠️ Revisión', text: `Este pedido de ${data.qty} unidades pasará por revisión manual de los administradores. ¿Confirmar?`,
+                icon: 'warning', showCancelButton: true, confirmButtonText: 'Sí, enviar'
+            }).then((r) => { if (r.isConfirmed) { data.suspicious = true; procesarReserva(data); } });
         } else {
-            procesarReserva(isSuspicious);
+            procesarReserva(data);
         }
     };
 
-    function procesarReserva(susFlag) {
-        document.getElementById('btnSubmitReserva').innerText = "Procesando...";
-        document.getElementById('btnSubmitReserva').disabled = true;
-
-        const data = {
+    function extraerDatosFormulario() {
+        return {
             name: document.getElementById('resName').value.trim(), 
             phone: document.getElementById('resPhone').value.trim(),
             product: document.getElementById('resProduct').value, 
@@ -567,10 +639,16 @@
             cupon: cuponAplicado || "Ninguno",
             timestamp: new Date().toLocaleString('es-CO'), 
             status: 'Pendiente', 
-            suspicious: susFlag
+            suspicious: false
         };
+    }
+
+    function procesarReserva(data) {
+        document.getElementById('btnSubmitReserva').innerText = "Procesando de forma segura...";
+        document.getElementById('btnSubmitReserva').disabled = true;
         
         const fileInput = document.getElementById('resReceiptFile');
+        const method = document.getElementById('resPaymentMethod').value;
         
         const guardarData = (base64Img) => {
             data.receipt = base64Img;
@@ -583,13 +661,26 @@
             }).catch(err => { Swal.fire('Error de Conexión', err.message, 'error'); resetBtn(); });
         };
 
-        if (data.payment === 'Transferencia' && fileInput.files.length > 0) {
+        if (method === 'Transferencia' && fileInput.files.length > 0) {
             comprimirImagen(fileInput.files[0], guardarData);
         } else { 
             guardarData(""); 
         }
     }
 
+    function registrarAlertaSeguridad(mensaje) {
+        const timestamp = new Date().toLocaleTimeString('es-CO');
+        securityLogs.unshift(`[${timestamp}] ⚠️ ${mensaje}`);
+        actualizarLogSeguridad();
+    }
+
+    function actualizarLogSeguridad() {
+        const list = document.getElementById('securityLogList');
+        list.innerHTML = securityLogs.slice(0,5).map(log => `<li>${log}</li>`).join('') || '<li>No hay alertas registradas.</li>';
+        document.getElementById('totalAlerts').innerText = securityLogs.length;
+    }
+
+    // -------- FACTURAS Y UI --------
     function generarFacturaUI(data, orderId) {
         document.getElementById('invId').innerText = orderId; 
         document.getElementById('invDate').innerText = data.timestamp.split(',')[0];
@@ -618,16 +709,16 @@
         cuponAplicado = null; 
         window.calcularTotalReserva();
         generarCaptcha(); 
-        window.toggleReceiptField(); 
+        window.togglePaymentFields(); 
         resetBtn();
     };
     
     function resetBtn() { 
-        document.getElementById('btnSubmitReserva').innerHTML = 'Confirmar Pedido Seguro y Facturar <i class="bi bi-shield-check"></i>'; 
+        document.getElementById('btnSubmitReserva').innerHTML = 'Confirmar Pedido Seguro <i class="bi bi-shield-check"></i>'; 
         document.getElementById('btnSubmitReserva').disabled = false; 
     }
 
-    // ---------------- ADMIN PANEL Y CONTADOR ----------------
+    // -------- ADMIN PANEL --------
     window.requestAccess = (role) => {
         Swal.fire({ 
             title: `Ingreso de Seguridad (${role})`, 
@@ -644,11 +735,13 @@
                 if (role === 'accounting') {
                     document.getElementById('accountingSummary').classList.remove('hidden-section');
                     document.getElementById('btnExportExcel').classList.remove('hidden-section');
+                    document.getElementById('securityDashboard').classList.remove('hidden-section');
                     document.getElementById('adminPromoTools').classList.add('hidden-section');
                     document.getElementById('panelTitle').innerHTML = '<i class="bi bi-calculator"></i> Panel del Contador';
                 } else {
                     document.getElementById('accountingSummary').classList.add('hidden-section');
                     document.getElementById('btnExportExcel').classList.add('hidden-section');
+                    document.getElementById('securityDashboard').classList.add('hidden-section');
                     document.getElementById('adminPromoTools').classList.remove('hidden-section');
                     document.getElementById('panelTitle').innerHTML = '<i class="bi bi-gear-fill"></i> Panel de Administración';
                 }
@@ -711,7 +804,7 @@
         document.body.removeChild(link);
     };
 
-    // ---------------- FUNCIONES AUXILIARES ----------------
+    // -------- INICIO --------
     function generarCaptcha() { 
         document.getElementById('resCaptcha').value = currentCaptcha = Math.floor(1000 + Math.random() * 9000).toString(); 
     }
@@ -733,7 +826,7 @@
         window.calcularTotalReserva();
     }
 
-    // ---------------- ESCUCHADORES EN TIEMPO REAL (FIREBASE) ----------------
+    // -------- ESCUCHADORES EN TIEMPO REAL (FIREBASE) --------
     onAuthStateChanged(auth, user => {
         window.currentUser = user;
         const authSec = document.getElementById('authSection'), profSec = document.getElementById('userProfileSection');
@@ -743,13 +836,14 @@
             profSec.classList.remove('hidden-section');
             document.getElementById('userNameDisplay').innerText = `Hola, ${user.displayName.split(' ')[0]}`;
             
-            onValue(query(ref(database, 'premios_ruleta'), orderByChild('email'), equalTo(user.email)), snap => {
+            // LECTURA DEL PREMIO POR UID (Seguro y funcional)
+            onValue(ref(database, 'premios/' + user.uid), snap => {
                 document.getElementById('userWallet').classList.remove('hidden-section');
                 if (snap.exists()) {
                     document.getElementById('spinBtn').disabled = true; 
                     document.getElementById('wheelDisplay').innerHTML = "Ya ganaste";
                     const data = snap.val(); 
-                    document.getElementById('walletPrize').innerText = data[Object.keys(data)[0]].premio;
+                    document.getElementById('walletPrize').innerText = data.premio;
                 } else {
                     document.getElementById('spinBtn').disabled = !isRouletteEnabled; 
                     document.getElementById('walletPrize').innerText = "Gira la ruleta arriba";
@@ -796,7 +890,7 @@
                 count++; rev += parseInt(r.total) || 0;
                 if(r.suspicious) alerts++;
                 
-                let btn = r.receipt ? `<img src="${r.receipt}" class="receipt-thumb mt-1" onclick="verComprobante('${r.receipt}')" title="Ver comprobante">` : '<span class="badge bg-secondary mt-1">Efectivo / Sin img</span>';
+                let btn = r.receipt ? `<img src="${r.receipt}" class="receipt-thumb mt-1" onclick="verComprobante('${r.receipt}')" title="Ver comprobante">` : '<span class="badge bg-secondary mt-1">Sin img</span>';
                 let trClass = r.suspicious ? 'flag-sus' : '';
                 let alertIcon = r.suspicious ? '<i class="bi bi-exclamation-triangle-fill text-danger fs-5" title="¡Pedido Grande / Sospechoso!"></i> ' : '';
                 
@@ -810,7 +904,7 @@
                         <td>${alertIcon}<strong>${r.name}</strong><br><small class="text-info">${r.phone}</small></td>
                         <td class="fw-bold">${r.qty}x ${r.product}</td>
                         <td class="text-success fw-bold">$${r.total.toLocaleString()}</td>
-                        <td>${r.payment}<br>${btn}</td>
+                        <td><small>${r.payment}</small><br>${btn}</td>
                         <td>
                             <select class="status-select w-100" onchange="updateStatus('${id}', this.value)">
                                 <option value="Pendiente" ${selPend}>🔴 Pendiente</option>
@@ -829,7 +923,7 @@
         document.getElementById('totalAlerts').innerText = alerts;
     });
 
-    onValue(ref(database, 'premios_ruleta'), snap => {
+    onValue(ref(database, 'premios'), snap => {
         const tbody = document.getElementById('rouletteWinnersTable'); tbody.innerHTML = "";
         if(snap.exists()) {
             Object.values(snap.val()).forEach(p => {
