@@ -70,7 +70,9 @@
         <div class="collapse navbar-collapse" id="navMenu">
             <div class="ms-auto d-flex align-items-center flex-wrap gap-3 mt-3 mt-lg-0 pb-2 pb-lg-0">
                 <button onclick="abrirHistorial()" class="btn btn-outline-info btn-sm rounded-pill shadow-sm fw-bold"><i class="bi bi-clock-history"></i> Mi Historial</button>
-                <a href="https://instagram.com/street_urbangrill" target="_blank" class="btn-instagram shadow-sm"><i class="bi bi-instagram"></i></a>
+                
+                <!-- BOTÓN DE INSTAGRAM MEJORADO CON DEEP LINK -->
+                <a href="#" onclick="abrirInstagram(event)" class="btn-instagram shadow-sm"><i class="bi bi-instagram"></i></a>
                 
                 <div id="authSection">
                     <button onclick="loginWithGoogle()" class="btn-google shadow-sm">
@@ -104,7 +106,7 @@
         <div class="row g-4" id="menuList"></div>
     </div>
 
-    <!-- RULETA LIBRE (SIN INICIAR SESIÓN OBLIGATORIO) -->
+    <!-- RULETA LIBRE -->
     <div class="roulette-container mb-5 shadow-lg">
         <h3 class="text-warning mb-2 fw-bold">🎡 Ruleta de Descuentos</h3>
         <p class="text-muted small">¡Gira la ruleta y gana! Si no has iniciado sesión, te pediremos tu nombre para guardar el premio.</p>
@@ -453,6 +455,27 @@
     ];
 
     const rouletteOptions = ["10% Descuento", "Gira de nuevo", "$1.000 Descuento", "Cede el turno", "¡Bono Especial!", "Gira de nuevo"];
+
+    // -------- LÓGICA DE INSTAGRAM (DEEP LINK) --------
+    window.abrirInstagram = (e) => {
+        e.preventDefault();
+        const username = 'street_urbangrill';
+        const webUrl = `https://www.instagram.com/${username}/`;
+        
+        // Si detectamos que está en un celular (Android/iOS)
+        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            // Intentamos forzar a que abra la APP nativa de Instagram
+            window.location.href = `instagram://user?username=${username}`;
+            
+            // Si después de 800ms no la abrió (porque no la tiene instalada), abrimos la web
+            setTimeout(() => {
+                window.open(webUrl, '_blank');
+            }, 800);
+        } else {
+            // Si está en computador, abre directo en otra pestaña
+            window.open(webUrl, '_blank');
+        }
+    };
 
     // -------- EFECTOS DE SONIDO --------
     function playSpinSound() {
