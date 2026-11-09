@@ -46,6 +46,7 @@
         
         .status-select { background: #333; color: white; border: 1px solid #555; border-radius: 5px; padding: 3px; font-size: 0.9rem; }
         .flag-sus { border: 2px solid #dc3545 !important; background-color: rgba(220,53,69,0.1); }
+        .flag-delayed { border: 2px solid #0d6efd !important; background-color: rgba(13,110,253,0.15); }
 
         /* Botón Asistente Flotante */
         .btn-floating-assistant { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; border-radius: 50%; background-color: #ff6f00; color: white; border: 3px solid #121212; box-shadow: 0 10px 25px rgba(255,111,0,0.5); z-index: 1050; display: flex; align-items: center; justify-content: center; transition: 0.3s; cursor: pointer; }
@@ -237,7 +238,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div id="adminPanel" class="hidden-section mb-5 pt-4">
         <div class="card p-4 shadow-lg border-warning">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
-                <h2 id="panelTitle" class="text-warning m-0 fw-bold">⚙️ Centro de Mando</h2>
+                <div class="d-flex align-items-center gap-3">
+                    <h2 id="panelTitle" class="text-warning m-0 fw-bold">⚙️ Centro de Mando</h2>
+                    <span id="onlineUsersBadge" class="badge bg-success rounded-pill px-3 py-2 fs-6 shadow-sm"><i class="bi bi-broadcast"></i> Clientes en línea: 1</span>
+                </div>
                 <div class="d-flex flex-wrap justify-content-center gap-2">
                     <button id="btnExportExcel" onclick="exportarCSV()" class="btn btn-success fw-bold hidden-section"><i class="bi bi-file-earmark-excel"></i> Exportar a Excel</button>
                     <button onclick="closeAdmin()" class="btn btn-outline-secondary">Cerrar Panel</button>
@@ -435,7 +439,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    import { getDatabase, ref, set, push, update, onValue, remove } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+    import { getDatabase, ref, set, push, update, onValue, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBLfJyBKCo_Gpu1N9f8Fy-X68THPE_8ht4",
@@ -457,10 +461,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     let cuponAplicado = null;
     let allReservations = {}; 
     let securityLogs = []; 
-    let previousOrdersCount = null; // Variable para controlar el sonido de nuevos pedidos
+    let previousOrdersCount = null;
 
     const NUMERO_WHATSAPP_NEGOCIO = "573000000000"; 
     const MAX_PEDIDOS_POR_HORA = 3; 
+
+    // PRESENCIA Y CLIENTES EN LÍNEA
+    const sessionRef = push(ref(database, 'presencia_clientes'));
+    set(sessionRef, { online: true });
+    onDisconnect(sessionRef).remove();
+
+    onValue(ref(database, 'presencia_clientes'), snap => {
+        const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+        const badge = document.getElementById('onlineUsersBadge');
+        if(badge) badge.innerHTML = `<i class="bi bi-broadcast"></i> Clientes en línea: ${count}`;
+    });
 
     const products = [
         { name: 'Chuzo de Pollo', desc: 'Pechuga marinada a la parrilla con arepa y queso.', price: 9000, img: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=80' },
@@ -513,11 +528,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         } catch(e){}
     }
 
-    /* FUNCIÓN DE SONIDO DE ALERTA PARA NUEVO PEDIDO EN EL ADMIN */
     function playAdminAlertSound() {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const notes = [880, 1318.51]; // Dos tonos estilo campana / caja registradora
+            const notes = [880, 1318.51]; 
             notes.forEach((freq, i) => {
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
@@ -542,7 +556,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         new bootstrap.Modal(document.getElementById('historyModal')).show();
     }
 
-    /* HISTORIAL RÁPIDO Y EN TIEMPO REAL CON ESTADO LOGÍSTICO VISIBLE */
+    /* HISTORIAL RÁPIDO CON OPCIONES DE APLAZAR Y CANCELAR PEDIDO */
     window.buscarMiHistorial = () => {
         const phone = document.getElementById('searchPhoneHistory').value.trim();
         const container = document.getElementById('historyResultsContainer');
@@ -554,7 +568,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             return;
         }
         
-        let html = '<table class="table table-dark table-sm table-striped mt-3 align-middle"><thead><tr class="text-info"><th>Ticket / Fecha</th><th>Pedido</th><th>Total</th><th>Estado Logístico</th><th>Acción</th></tr></thead><tbody>';
+        let html = '<table class="table table-dark table-sm table-striped mt-3 align-middle"><thead><tr class="text-info"><th>Ticket / Fecha</th><th>Pedido</th><th>Total</th><th>Estado Logístico</th><th>Acciones de Gestión</th></tr></thead><tbody>';
         found.forEach(([id, r]) => {
             let badgeClass = 'bg-danger';
             let statusIcon = 'bi-hourglass-split';
@@ -565,22 +579,58 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             } else if (r.status === 'Preparando') {
                 badgeClass = 'bg-warning text-dark';
                 statusIcon = 'bi-fire';
+            } else if (r.status === 'Aplazado') {
+                badgeClass = 'bg-primary';
+                statusIcon = 'bi-clock-history';
             }
 
-            let deleteBtn = r.status === 'Pendiente' 
-                ? `<button onclick="eliminarPedidoCliente('${id}', '${phone}')" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Cancelar</button>` 
-                : '<small class="text-muted">No cancelable</small>';
+            let actionBtns = '';
+            if (r.status === 'Pendiente' || r.status === 'Preparando') {
+                actionBtns = `
+                    <div class="d-flex gap-1 flex-wrap">
+                        <button onclick="aplazarPedidoCliente('${id}', '${phone}', '${r.time}')" class="btn btn-sm btn-outline-info" title="Pedir 10 min más"><i class="bi bi-clock"></i> +10 min</button>
+                        <button onclick="eliminarPedidoCliente('${id}', '${phone}')" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle"></i> Cancelar</button>
+                    </div>`;
+            } else {
+                actionBtns = '<small class="text-muted">Finalizado</small>';
+            }
             
             html += `<tr>
                 <td><span class="badge bg-secondary">#${id.substring(1,6)}</span><br><small class="text-muted">${r.timestamp.split(',')[0]}</small></td>
                 <td><strong>${r.qty}x ${r.product}</strong><br><small class="text-info"><i class="bi bi-clock"></i> Recogida: ${r.time}</small></td>
                 <td class="text-success fw-bold">$${r.total.toLocaleString()}</td>
                 <td><span class="badge ${badgeClass} fs-6 shadow-sm"><i class="bi ${statusIcon}"></i> ${r.status}</span></td>
-                <td>${deleteBtn}</td>
+                <td>${actionBtns}</td>
             </tr>`;
         });
         html += '</tbody></table>';
         container.innerHTML = html;
+    };
+
+    window.aplazarPedidoCliente = (id, phone, currentRecogida) => {
+        let parts = currentRecogida.split(':');
+        let newTimeStr = currentRecogida;
+        if(parts.length === 2) {
+            let h = parseInt(parts[0]), m = parseInt(parts[1]) + 10;
+            if(m >= 60) { h = (h + 1) % 24; m = m - 60; }
+            newTimeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+        }
+
+        Swal.fire({
+            title: '¿Deseas aplazar tu pedido?',
+            text: `La nueva hora de recogida estimada será a las ${newTimeStr}.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, aplazar 10 min'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                update(ref(database, 'reservas/' + id), { status: 'Aplazado', time: newTimeStr, delayed: true }).then(() => {
+                    Swal.fire('Aplazado', 'Hemos notificado al stand que recogerás tu pedido más tarde.', 'success');
+                    document.getElementById('searchPhoneHistory').value = phone;
+                    window.buscarMiHistorial();
+                });
+            }
+        });
     };
 
     window.eliminarPedidoCliente = (id, phone) => {
@@ -825,7 +875,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             total: window.calcularTotalReserva(), 
             cupon: cuponAplicado || "Ninguno",
             timestamp: new Date().toLocaleString('es-CO'), 
-            status: 'Pendiente', suspicious: false
+            status: 'Pendiente', suspicious: false, delayed: false
         };
     }
 
@@ -965,7 +1015,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             formattedPhone = '57' + cleanPhone;
         }
         
-        const textMsg = `¡Hola *${name}*! 🔥%0A%0ATu pedido *#${orderId}* (${qty}x ${product}) en *Urban Grill* ya está *LISTO PARA RECOGER* 🍢🔥%0A%0APuedes pasar por el stand principal a retirarlo. ¡Te esperamos!`;
+        const textMsg = `¡Hola *${name}*! 🔥%0A%0ATu pedido *#${orderId}* (${qty}x ${product}) en *Urban Grill* ya está listo puedes pasar a recogerlo 🍢🔥%0A%0A¡Te esperamos!`;
         const waUrl = `https://wa.me/${formattedPhone}?text=${textMsg}`;
         window.open(waUrl, '_blank');
     };
@@ -1047,7 +1097,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         if (snap.exists()) {
             const currentCount = Object.keys(allReservations).length;
             
-            // Si hay más pedidos que antes, suena la campana del admin
             if (previousOrdersCount !== null && currentCount > previousOrdersCount) {
                 playAdminAlertSound();
             }
@@ -1060,19 +1109,25 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 if(r.suspicious) alerts++;
                 
                 let btn = r.receipt ? `<img src="${r.receipt}" class="receipt-thumb mt-1" onclick="verComprobante('${r.receipt}')" title="Ver comprobante">` : '<span class="badge bg-secondary mt-1">Sin img</span>';
-                let trClass = r.suspicious ? 'flag-sus' : '';
+                
+                let trClass = '';
+                if(r.delayed) trClass = 'flag-delayed';
+                else if(r.suspicious) trClass = 'flag-sus';
+
                 let riesgoBadge = r.riesgoIA === "🟢 SEGURO" ? 'bg-success' : (r.riesgoIA === "🟡 RIESGO MEDIO" ? 'bg-warning text-dark' : 'bg-danger');
                 
                 let selPend = r.status === 'Pendiente' ? 'selected' : '';
                 let selPrep = r.status === 'Preparando' ? 'selected' : '';
                 let selEntr = r.status === 'Entregado' ? 'selected' : '';
+                let selApl  = r.status === 'Aplazado' ? 'selected' : '';
 
                 const orderShortId = id.substring(1, 6);
+                let aplazadoNotice = r.delayed ? `<br><span class="badge bg-primary mt-1">🔵 APLAZADO (+10 min)</span>` : '';
 
                 tbody.innerHTML += `
                     <tr class="${trClass}">
-                        <td><span class="badge bg-light text-dark fw-bold mb-1">#${orderShortId}</span><br><small>${r.time}</small></td>
-                        <td><strong>${r.name}</strong><br><span class="badge ${riesgoBadge} mt-1">${r.riesgoIA || '🟢 SEGURO'}</span><br><small class="text-info">${r.phone}</small></td>
+                        <td><span class="badge bg-light text-dark fw-bold mb-1">#${orderShortId}</span><br><small class="fw-bold text-warning">${r.time}</small></td>
+                        <td><strong>${r.name}</strong><br><span class="badge ${riesgoBadge} mt-1">${r.riesgoIA || '🟢 SEGURO'}</span>${aplazadoNotice}<br><small class="text-info">${r.phone}</small></td>
                         <td class="fw-bold">${r.qty}x ${r.product}</td>
                         <td class="text-success fw-bold">$${r.total.toLocaleString()}</td>
                         <td><small>${r.payment}</small><br>${btn}</td>
@@ -1080,6 +1135,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                             <select class="status-select w-100" onchange="updateStatus('${id}', this.value)">
                                 <option value="Pendiente" ${selPend}>🔴 Pendiente</option>
                                 <option value="Preparando" ${selPrep}>🟡 Preparando</option>
+                                <option value="Aplazado" ${selApl}>🔵 Aplazado</option>
                                 <option value="Entregado" ${selEntr}>🟢 Entregado</option>
                             </select>
                         </td>
